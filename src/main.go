@@ -1,6 +1,6 @@
 package main
 
-import "./emailGenerator"
+import "./bloomDataGenerator"
 import "fmt"
 
 func getAverageLen(addrs []string)(int){
@@ -13,9 +13,9 @@ func getAverageLen(addrs []string)(int){
 }
 
 func main(){
-	fmt.Println(getAverageLen(emailGenerator.GenEmailAddrs(100)))
-	fmt.Println(getAverageLen(emailGenerator.GenEmailAddrs(1000)))
-	fmt.Println(getAverageLen(emailGenerator.GenEmailAddrs(10000)))
-	fmt.Println(getAverageLen(emailGenerator.GenEmailAddrs(100000)))
-	fmt.Println(getAverageLen(emailGenerator.GenEmailAddrs(1000000)))
+	m := bloomDataGenerator.GenData(5, 10, 100)
+	for i := range m{
+		fmt.Println(i, "---", m[i], "\n")	
+	}
 }
+
