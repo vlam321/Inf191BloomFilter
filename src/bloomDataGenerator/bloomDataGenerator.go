@@ -7,17 +7,18 @@ Basic Requirements:
 	21-23 chars
 
 */
-package emailGenerator
+package bloomDataGenerator
 
 import (
 	"math/rand"
 	"time"
+	"strconv"
 )
 
 var seededRandPtr * rand.Rand = rand.New(rand.NewSource(
 					time.Now().UnixNano()))
 
-func genRandAdd() (string){
+func genRandAddr() (string){
 	chars := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	userNameLen := seededRandPtr.Intn(10) + 5
 	domainLen := seededRandPtr.Intn(5) + 6
@@ -35,10 +36,28 @@ func genRandAdd() (string){
 	return string(userNameArray) + "@" + string(domainName) + ".com"
 }
 
-func GenEmailAddrs(size int) ([]string){
+func genEmailAddrs(min, max int) ([]string){
+	size := seededRandPtr.Intn(max - min) + min
 	emailAdds := make([]string, size)
 	for i := range emailAdds{
-		emailAdds[i] = genRandAdd()
+		emailAdds[i] = genRandAddr()
 	}
 	return emailAdds
+}
+
+func genUsers(size int) ([]string){
+	users := make([]string, size)
+	for i := range users{
+		users[i] = strconv.Itoa(i)
+	}
+	return users
+}
+
+func GenData(user_size, min_email_addrs, max_email_addrs int) (map[string][]string){
+	randData := make(map[string][]string)
+	users := genUsers(user_size)
+	for i := range users{
+		randData[users[i]] = genEmailAddrs(min_email_addrs, max_email_addrs)
+	}
+	return randData
 }
