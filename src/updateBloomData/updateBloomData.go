@@ -18,6 +18,8 @@ type Update struct {
 }
 
 func New(dsn string) *Update{
+	// input: dsn = 'username:password@/database'
+	// create new connection
 	db , err := sql.Open("mysql", dsn)
 	if err != nil {
 		panic(err.Error())
@@ -26,12 +28,13 @@ func New(dsn string) *Update{
 }
 
 func (update *Update)CloseConnection(){
+	// Update method, closes connection
 	update.db.Close()
 	fmt.Println("Connection Closed\n")
 }
 
 func (update *Update)InsertDataSet(dataSet map[int][]string){
-	// Takes a (int, string)map of data and insert them
+	// Takes a (int, string[])map of data and insert them
 	// into the specified db
 	db := update.db
 	stmt, err := db.Prepare(`INSERT INTO unsub_0 (user_id, email) VALUES (?,?)`)

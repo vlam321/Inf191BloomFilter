@@ -19,4 +19,3 @@ data := bloomDataGenerator.GenData(5, 100, 1000)
 update := updatebloomData.New(dsn)
 update.InsertDataSet(data)
 ```
-
