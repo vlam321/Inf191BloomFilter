@@ -7,7 +7,7 @@ import(
 	"fmt"
 )
 
-func outErr(err error){
+func checkErr(err error){
 	if err != nil{
 		panic(err)
 	}
@@ -38,25 +38,27 @@ func (update *Update)InsertDataSet(dataSet map[int][]string){
 	// into the specified db
 	db := update.db
 	stmt, err := db.Prepare(`INSERT INTO unsub_0 (user_id, email) VALUES (?,?)`)
-	outErr(err)
+	checkErr(err)
 
 	_, err = db.Exec("BEGIN")
-	outErr(err)
+	checkErr(err)
 
 	for userid, emails := range dataSet{
 		for i := range(emails){
 			_, err := stmt.Exec(userid, emails[i])
-			outErr(err)
+			checkErr(err)
 		}
 	}
 
 	_, err = db.Exec("COMMIT")
-	outErr(err)
+	checkErr(err)
 }
 
-func (update *Update)Clear() {
+func (update *Update)Clear(){
 	// Delete all rows from a table in the database
+	// Be very careful when using this function! It can
+	// take a while to repopulate the db
 	db := update.db
 	_, err := db.Exec("TRUNCATE TABLE unsub_0")
-	outErr(err)
+	checkErr(err)
 }

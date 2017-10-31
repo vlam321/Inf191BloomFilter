@@ -1,20 +1,22 @@
 package main
 
 import (
-	"./updateBloomData"
-	"./bloomDataGenerator"
+	"Inf191BloomFilter/src/bloomDataGenerator"
+	"Inf191BloomFilter/src/updateBloomData"
 	"fmt"
-	"time"
 	"os"
 	"strconv"
+	"time"
 )
+
 
 func checkErr(err error){
 	// check error from database if any
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 }
+
 
 func main(){
 	// command line inputs
