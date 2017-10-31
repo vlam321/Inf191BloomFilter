@@ -51,8 +51,10 @@ func (update *Update)InsertDataSet(dataSet map[int][]string){
 	checkErr(err)
 }
 
-func (update *Update)Clear() {
+func (update *Update)Clear(){
 	// Delete all rows from a table in the database
+	// Be very careful when using this function! It can
+	// take a while to repopulate the db
 	db := update.db
 	_, err := db.Exec("TRUNCATE TABLE unsub_0")
 	checkErr(err)
