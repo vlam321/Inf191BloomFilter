@@ -3,6 +3,7 @@ package main
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/willf/bloom"
 )
 
@@ -15,18 +16,10 @@ func TestAdd(t *testing.T) {
 	b.Add(email1)
 	b.Add(email2)
 	b.Add(email3)
-	if b.Test(email4) {
-		t.Errorf("%v should not be in bloom filter", email4)
-	}
-	if !b.Test(email3) {
-		t.Errorf("%v should be in bloom filter", email3)
-	}
-	if !b.Test(email2) {
-		t.Errorf("%v should be in bloom filter", email2)
-	}
-	if !b.Test(email1) {
-		t.Errorf("%v should be in bloom filter", email1)
-	}
+	assert.Equal(t, false, b.Test(email4))
+	assert.Equal(t, true, b.Test(email3))
+	assert.Equal(t, true, b.Test(email2))
+	assert.Equal(t, true, b.Test(email1))
 }
 
 func TestAddString(t *testing.T) {
@@ -35,31 +28,18 @@ func TestAddString(t *testing.T) {
 	email2 := "alice@uci.edu"
 	email3 := "sam@gmail.com"
 	b.AddString(email1)
-	if b.TestString(email3) {
-		t.Errorf("%v should not be in bloom filter", email3)
-	}
+	assert.Equal(t, false, b.TestString(email3))
 	b.AddString(email3)
-	if b.TestString(email2) {
-		t.Errorf("%v should not be in bloom filter", email2)
-	}
-	if !b.TestString(email3) {
-		t.Errorf("%v should be in bloom filter", email3)
-	}
-	if !b.TestString(email1) {
-		t.Errorf("%v should be in bloom filter", email1)
-	}
+	assert.Equal(t, false, b.TestString(email2))
+	assert.Equal(t, true, b.TestString(email3))
+	assert.Equal(t, true, b.TestString(email1))
 }
 
 func TestTestAndAddString(t *testing.T) {
 	b := bloom.New(1000, 2)
 	email1 := "jake@gmail.com"
-	if b.TestString(email1) {
-		t.Errorf("%v should not be in bloom filter", email1)
-	}
-	if b.TestAndAddString(email1) {
-		t.Errorf("%v should not be in bloom filter the first time we look", email1)
-	}
-	if !b.TestString(email1) {
-		t.Errorf("%v should be in bloom filter", email1)
-	}
+	assert.Equal(t, false, b.TestString(email1))
+	assert.Equal(t, false, b.TestAndAddString(email1))
+	// should not add the string until after TestAndAddString() is called
+	assert.Equal(t, true, b.TestString(email1))
 }

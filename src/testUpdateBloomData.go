@@ -1,21 +1,21 @@
 package main
 
 import (
-	"./updateBloomData"
-	"./bloomDataGenerator"
+	"Inf191BloomFilter/src/bloomDataGenerator"
+	"Inf191BloomFilter/src/updateBloomData"
 	"fmt"
-	"time"
 	"os"
 	"strconv"
+	"time"
 )
 
-func checkErr(err error){
-	if err != nil{
+func checkErr(err error) {
+	if err != nil {
 		panic(err)
 	}
 }
 
-func main(){
+func main() {
 	clInputs := os.Args[1:]
 
 	numUsers, err := strconv.Atoi(clInputs[0])
