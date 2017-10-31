@@ -1,6 +1,5 @@
 package main
 
-// import "./bloomDataGenerator"
 import "fmt"
 import "net/http"
 import "strings"

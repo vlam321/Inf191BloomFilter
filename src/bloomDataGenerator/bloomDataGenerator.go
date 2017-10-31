@@ -12,13 +12,14 @@ package bloomDataGenerator
 import (
 	"math/rand"
 	"time"
-	"strconv"
 )
 
+// random seed
 var seededRandPtr * rand.Rand = rand.New(rand.NewSource(
 					time.Now().UnixNano()))
 
 func genRandAddr() (string){
+	// creates one random email address 
 	chars := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	userNameLen := seededRandPtr.Intn(10) + 5
 	domainLen := seededRandPtr.Intn(5) + 6
@@ -37,6 +38,7 @@ func genRandAddr() (string){
 }
 
 func genEmailAddrs(min, max int) ([]string){
+	// creates array[size] of email addresses
 	size := seededRandPtr.Intn(max - min) + min
 	emailAdds := make([]string, size)
 	for i := range emailAdds{
@@ -45,16 +47,18 @@ func genEmailAddrs(min, max int) ([]string){
 	return emailAdds
 }
 
-func genUsers(size int) ([]string){
-	users := make([]string, size)
+func genUsers(size int) ([]int){
+	// create array[size] of user ids
+	users := make([]int, size)
 	for i := range users{
-		users[i] = strconv.Itoa(i)
+		users[i] = i
 	}
 	return users
 }
 
-func GenData(user_size, min_email_addrs, max_email_addrs int) (map[string][]string){
-	randData := make(map[string][]string)
+func GenData(user_size, min_email_addrs, max_email_addrs int) (map[int][]string){
+	// create map(int, string[]) (user_id, email addresses) 
+	randData := make(map[int][]string)
 	users := genUsers(user_size)
 	for i := range users{
 		randData[users[i]] = genEmailAddrs(min_email_addrs, max_email_addrs)
