@@ -17,7 +17,7 @@ func getAverageLen(addrs []string)(int){
 
 func main(){
 	// Connecting to the DB
-	db, err := sql.Open("mysql", "username:password@/unsubscribed")
+	db, err := sql.Open("mysql", "bloom:test@/unsubscribed") 
 	if err != nil {     panic(err.Error()) // Just for example purpose. You should use proper error handling instead of panic 
 	}
 

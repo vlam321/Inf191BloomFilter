@@ -33,6 +33,23 @@ func (update *Update)CloseConnection(){
 	fmt.Println("Connection Closed\n")
 }
 
+func (update *Update)SelectAll() (map[int][]string){
+	// select all from database  
+	db := update.db
+	result := map[int][]string{}
+	fmt.Println(result)
+	rows, err := db.Query("SELECT user_id, email FROM unsub_0") // get all rows from database
+	for rows.Next(){
+		var user_id int
+		var email string
+		err = rows.Scan(&user_id, &email)
+		outErr(err)
+		result[user_id] = append(result[user_id], email)
+	}
+	outErr(err)
+	return result
+}
+
 func (update *Update)InsertDataSet(dataSet map[int][]string){
 	// Takes a (int, string[])map of data and insert them
 	// into the specified db
@@ -62,3 +79,4 @@ func (update *Update)Clear(){
 	_, err := db.Exec("TRUNCATE TABLE unsub_0")
 	checkErr(err)
 }
+
