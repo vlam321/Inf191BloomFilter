@@ -2,7 +2,7 @@ package main // probably need to convert this to a proper go test
 
 import (
 	"Inf191BloomFilter/src/bloomDataGenerator"
-	"Inf191BloomFilter/src/databaseUpdater"
+	"Inf191BloomFilter/src/databaseAccessObj"
 	"fmt"
 	"os"
 	"strconv"
@@ -34,7 +34,7 @@ func main(){
 	checkErr(err)
 
 	// log into db and clear table
-	update := databaseUpdater.New("bloom:test@/unsubscribed")
+	update := databaseAccessObj.New("bloom:test@/unsubscribed")
 	fmt.Println("Clearing current db...")
 	update.Clear()
 	fmt.Println("Done.")

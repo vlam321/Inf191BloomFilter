@@ -1,4 +1,4 @@
-package databaseUpdater
+package databaseAccessObj
 
 import(
 	//"../bloomDataGenerator"
