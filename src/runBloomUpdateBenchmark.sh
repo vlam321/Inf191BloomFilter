@@ -1,5 +1,5 @@
 go run testDatabaseUpdater.go 10 100 1000
-go run testDatebaseUpdater.go 10 200 2000
+go run testDatabaseUpdater.go 10 200 2000
 go run testDatabaseUpdater.go 10 400 4000
 go run testDatabaseUpdater.go 10 800 8000
 go run testDatabaseUpdater.go 10 1600 16000
