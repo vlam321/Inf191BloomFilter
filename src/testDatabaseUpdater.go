@@ -1,20 +1,22 @@
-package main
+package main // probably need to convert this to a proper go test
 
 import (
-	"./updateBloomData"
-	"./bloomDataGenerator"
+	"Inf191BloomFilter/src/bloomDataGenerator"
+	"Inf191BloomFilter/src/databaseUpdater"
 	"fmt"
-	"time"
 	"os"
 	"strconv"
+	"time"
 )
+
 
 func checkErr(err error){
 	// check error from database if any
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 }
+
 
 func main(){
 	// command line inputs
@@ -32,7 +34,7 @@ func main(){
 	checkErr(err)
 
 	// log into db and clear table
-	update := updateBloomData.New("bloom:test@/unsubscribed")
+	update := databaseUpdater.New("bloom:test@/unsubscribed")
 	fmt.Println("Clearing current db...")
 	update.Clear()
 	fmt.Println("Done.")
