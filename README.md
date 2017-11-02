@@ -1,7 +1,7 @@
 # Inf191BloomFilter
 
-## Installation
-To start working on this project, simply fork this repository and clone it using after replacing "vlam321" with your user name, Like so: 
+## Contribution
+To start contributing to this project, simply fork this repository and clone it using after replacing "vlam321" with your user name, Like so: 
 `git clone https://github.com/yourGithubUserName/Inf191BloomFilter`
 
 ## Dependencies
@@ -10,6 +10,8 @@ The following dependencies will be needed to run some of the files in this repo.
 ` go get -u github.com/go-sql-driver/mysql`
 ### Bloom Filter
 `go get -u github.com/willf/bloom`
+### Testify
+`go get github.com/stretchr/testify`
 
 ## Test Data Generator
 Test Data can be generated using the bloomDataGenerator package. The function GenData will require 3 arguments: amount of users, and a minimum and maximum values to set the range for the number of email addresses to be generated.

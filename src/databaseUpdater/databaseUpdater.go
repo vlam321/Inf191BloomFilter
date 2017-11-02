@@ -1,4 +1,4 @@
-package updateBloomData
+package databaseUpdater
 
 import(
 	//"../bloomDataGenerator"
