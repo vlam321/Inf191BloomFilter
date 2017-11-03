@@ -43,10 +43,10 @@ func (update *Update)SelectAll() (map[int][]string){
 		var user_id int
 		var email string
 		err = rows.Scan(&user_id, &email)
-		outErr(err)
+		checkErr(err)
 		result[user_id] = append(result[user_id], email)
 	}
-	outErr(err)
+	checkErr(err)
 	return result
 }
 
