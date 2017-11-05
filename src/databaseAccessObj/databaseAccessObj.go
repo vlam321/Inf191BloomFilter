@@ -27,10 +27,25 @@ func New(dsn string) *Update{
 	return &Update{db}
 }
 
+func (update *Update)HasTable(databaseName, tableName string) bool{
+	// Checks if the specify tablename exist in the specified database
+	db := update.db
+	_, err := db.Exec("use information_schema")
+	row, err := db.Query(`SELECT count(table_name) FROM tables
+	WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`, databaseName, tableName)
+	checkErr(err)
+	var count int
+	for row.Next(){
+		err := row.Scan(&count)
+		checkErr(err)
+	}
+	if (count > 0){return true}
+	return false
+}
+
 func (update *Update)CloseConnection(){
 	// Update method, closes connection
 	update.db.Close()
-	fmt.Println("Connection Closed\n")
 }
 
 func (update *Update)SelectAll() (map[int][]string){
