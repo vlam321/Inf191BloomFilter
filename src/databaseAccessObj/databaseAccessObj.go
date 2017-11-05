@@ -27,20 +27,46 @@ func New(dsn string) *Update{
 	return &Update{db}
 }
 
-func (update *Update)HasTable(databaseName, tableName string) bool{
+func (update *Update)hasTable(databaseName, tableName string) bool{
+	// For testing purposes
 	// Checks if the specify tablename exist in the specified database
 	db := update.db
-	_, err := db.Exec("use information_schema")
-	row, err := db.Query(`SELECT count(table_name) FROM tables
+	row, err := db.Query(`SELECT count(table_name) FROM information_schema.tables
 	WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`, databaseName, tableName)
 	checkErr(err)
+
 	var count int
 	for row.Next(){
 		err := row.Scan(&count)
 		checkErr(err)
 	}
-	if (count > 0){return true}
+	if (count > 0){
+		return true
+	}
 	return false
+}
+
+func (update *Update)dropTable(tableName string){
+	// for testing purposes
+	// Delete the table in the db if exists
+	db := update.db
+	_, err := db.Exec("DROP TABLE IF EXISTS " + tableName)
+	checkErr(err)
+}
+
+func (update *Update)EnsureTable(tableName string){
+	// Checks if the specify table exists, if  not, Create a table
+	// with that name
+
+	db := update.db
+	// Need to double check if this statment needs
+	// placeholder
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS ` + tableName +
+	` (user_id int(11) NOT NULL DEFAULT '0',
+	email varchar(255) NOT NULL DEFAULT '',
+	PRIMARY KEY (user_id, email))
+	ENGINE=InnoDB DEFAULT CHARSET=utf8`)
+	checkErr(err)
 }
 
 func (update *Update)CloseConnection(){
