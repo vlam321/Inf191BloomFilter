@@ -5,6 +5,7 @@ import(
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"fmt"
+	"strconv"
 )
 
 func checkErr(err error){
@@ -110,6 +111,33 @@ func (update *Update)InsertDataSet(dataSet map[int][]string){
 
 	_, err = db.Exec("COMMIT")
 	checkErr(err)
+}
+
+func (update *Update)InsertDataShards(dataSet map[int][]string){
+	// Takes a (int, string[])map of data and insert them
+	// into different table according to the user_id
+	// This should be use when trying to insert a larger amount
+	// it would be faster to user InsertDataSet with smaller numbers
+	db := update.db
+	for userid, emails := range dataSet{
+		tableName := "unsub_" + strconv.Itoa(userid)
+
+		update.EnsureTable(tableName)
+		stmt, err := db.Prepare(`INSERT INTO ` + tableName +
+		` (user_id, email) VALUES (?,?)`)
+		checkErr(err)
+
+		_, err = db.Exec("BEGIN")
+		checkErr(err)
+
+		for i := range(emails){
+			_, err := stmt.Exec(userid, emails[i])
+			checkErr(err)
+		}
+
+		_, err = db.Exec("COMMIT")
+		checkErr(err)
+	}
 }
 
 func (update *Update)Clear(){

@@ -46,12 +46,25 @@ func main(){
 	elapsed := time.Since(start)
 	fmt.Printf("Done. Took %s\n", elapsed)
 
-	// benchmarking for insert random data into db
+	// benchmarking for insert random data into one table in the db
 	fmt.Println("Inserting test data into db...")
 	start = time.Now()
 	update.InsertDataSet(data)
 	elapsed = time.Since(start)
+	fmt.Printf("Done. Took %s\n\n", elapsed)
+
+	/*
+	fmt.Println("Clearing current db...")
+	update.Clear()
+	fmt.Println("Done.\n")
+
+	// benchmarking for inserting random data into multiple shards
+	fmt.Println("Inserting test data into db shards...")
+	start = time.Now()
+	update.InsertDataShards(data)
+	elapsed = time.Since(start)
 	fmt.Printf("Done. Took %s\n", elapsed)
+	*/
 
 	update.CloseConnection()
 }
