@@ -15,6 +15,7 @@ package databaseAccessObj
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"Inf191BloomFilter/src/bloomDataGenerator"
 )
 
 const dsn = "bloom:test@/unsubscribed"
@@ -32,7 +33,6 @@ func TestHasTable(t *testing.T){
 	assert.Equal(t, update.hasTable("unsubscribed", "nope"), false)
 	update.CloseConnection()
 }
-
 
 func TestEnsureTable(t *testing.T){
 	update := New(dsn)
@@ -57,4 +57,34 @@ func TestEnsureTable(t *testing.T){
 	assert.Equal(t, update.hasTable("unsubscribed", "unsub_2"), true)
 
 	update.CloseConnection()
+}
+
+func TestInsertAndSelect(t *testing.T){
+	update := New(dsn)
+	data := bloomDataGenerator.GenData(1, 10, 20)
+
+	// Make sure the table is empty
+	update.Clear()
+
+	// Add data to db
+	update.InsertDataSet(data)
+
+	retrieved := update.SelectAll()
+	expected_emails := make(map[string]bool)
+
+	for _, emails := range data{
+		for i := range emails{
+			expected_emails[emails[i]] = true
+		}
+	}
+
+	// Test if data generated is the same as ones
+	// retrieved from db
+	for _, emails := range retrieved {
+		for i := range emails{
+			if ! expected_emails[emails[i]]{
+				t.Error()
+			}
+		}
+	}
 }

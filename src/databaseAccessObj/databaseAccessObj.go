@@ -1,10 +1,8 @@
 package databaseAccessObj
 
 import(
-	//"../bloomDataGenerator"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	"fmt"
 	"strconv"
 )
 
@@ -79,7 +77,6 @@ func (update *Update)SelectAll() (map[int][]string){
 	// select all from database  
 	db := update.db
 	result := map[int][]string{}
-	fmt.Println(result)
 	rows, err := db.Query("SELECT user_id, email FROM unsub_0") // get all rows from database
 	for rows.Next(){
 		var user_id int
@@ -94,7 +91,7 @@ func (update *Update)SelectAll() (map[int][]string){
 
 func (update *Update)InsertDataSet(dataSet map[int][]string){
 	// Takes a (int, string[])map of data and insert them
-	// into the specified db
+	// into one table in the database
 	db := update.db
 	stmt, err := db.Prepare(`INSERT INTO unsub_0 (user_id, email) VALUES (?,?)`)
 	checkErr(err)
