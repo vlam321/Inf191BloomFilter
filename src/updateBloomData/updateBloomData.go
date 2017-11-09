@@ -7,24 +7,31 @@ import (
 	"github.com/willf/bloom"
 )
 
+const bitArraySize = 10000
+const numberOfHashFunction = 5
+
 type BloomFilter struct {
-	bloomFilter           bloom.BloomFilter
-	backupCopyBloomFilter bloom.BloomFilter
+	bloomFilter *bloom.BloomFilter
 }
 
-func CopyAndRepopulateBloomFilter(bf bloom.BloomFilter) bloom.BloomFilter {
-	// makes a copy of the old bloom filter and repopulates the bloom filter with new data
-	// used when the database is modified
-	backupCopyBloomFilter := bf.Copy()
+func New() *BloomFilter {
+	bloomFilter := bloom.New(bitArraySize, numberOfHashFunction)
+	return &BloomFilter{bloomFilter}
+}
+
+func (bf *BloomFilter) UpdateBloomFilter() {
+	// used when more unsubscribed emails have been added to the database
+}
+
+func (bf *BloomFilter) RepopulateBloomFilter() {
+	// used when unsubscribed emails are removed from the database - resubscribed emails example
+	newBloomFilter := bloom.New(bitArraySize, numberOfHashFunction)
 	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
 	databaseResultMap := dao.SelectAll()
-	//access dao and selectall, return map
-	bf.ClearAll()
 	for key, value := range databaseResultMap {
-		for i := 0; i <= len(value); i++ {
-			bf.AddString(strconv.Itoa(int(key)) + "_" + value[i])
+		for i := range value {
+			newBloomFilter.AddString(strconv.Itoa(int(key)) + "_" + value[i])
 		}
 	}
-	bloomFilter := bf.Copy()
-	return bf
+	bf.bloomFilter = newBloomFilter.Copy()
 }
