@@ -41,20 +41,20 @@ func TestEnsureTable(t *testing.T){
 	assert.Equal(t, update.hasTable("unsubscribed", "unsub_0"), true)
 
 	// Delete these tables if they exist in the db
-	update.dropTable("unsub_1")
-	update.dropTable("unsub_2")
+	update.dropTable("unsub_99")
+	update.dropTable("unsub_100")
 
 	// Make sure that these table doesn't exist in the databse
-	assert.Equal(t, update.hasTable("unsubscribed", "unsub_1"), false)
-	assert.Equal(t, update.hasTable("unsubscribed", "unsub_2"), false)
+	assert.Equal(t, update.hasTable("unsubscribed", "unsub_99"), false)
+	assert.Equal(t, update.hasTable("unsubscribed", "unsub_100"), false)
 
 	// Run ensure table using the same inputs to create the tables
-	update.EnsureTable("unsub_1")
-	update.EnsureTable("unsub_2")
+	update.EnsureTable("unsub_99")
+	update.EnsureTable("unsub_100")
 
 	// double check to make sure that the tables are created
-	assert.Equal(t, update.hasTable("unsubscribed", "unsub_1"), true)
-	assert.Equal(t, update.hasTable("unsubscribed", "unsub_2"), true)
+	assert.Equal(t, update.hasTable("unsubscribed", "unsub_99"), true)
+	assert.Equal(t, update.hasTable("unsubscribed", "unsub_100"), true)
 
 	update.CloseConnection()
 }
