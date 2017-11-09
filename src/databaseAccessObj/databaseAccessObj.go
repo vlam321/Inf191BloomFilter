@@ -30,19 +30,15 @@ func (update *Update)hasTable(databaseName, tableName string) bool{
 	// For testing purposes
 	// Checks if the specify tablename exist in the specified database
 	db := update.db
-	row, err := db.Query(`SELECT count(table_name) FROM information_schema.tables
-	WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`, databaseName, tableName)
-	checkErr(err)
 
-	var count int
-	for row.Next(){
-		err := row.Scan(&count)
+	var check string
+	err := db.QueryRow("SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name = ? LIMIT 1", databaseName, tableName).Scan(&check)
+	if(err == sql.ErrNoRows){
+		return false
+	} else{
 		checkErr(err)
 	}
-	if (count > 0){
-		return true
-	}
-	return false
+	return true
 }
 
 func (update *Update)dropTable(tableName string){
@@ -54,7 +50,7 @@ func (update *Update)dropTable(tableName string){
 }
 
 func (update *Update)EnsureTable(tableName string){
-	// Checks if the specify table exists, if  not, Create a table
+	// Checks if the specified table exists, if  not, Create a table
 	// with that name
 
 	db := update.db
@@ -74,10 +70,11 @@ func (update *Update)CloseConnection(){
 }
 
 func (update *Update)SelectAll() (map[int][]string){
-	// select all from database  
+	// Update method, select all rows from table: unsub_0 
 	db := update.db
 	result := map[int][]string{}
 	rows, err := db.Query("SELECT user_id, email FROM unsub_0") // get all rows from database
+	defer rows.Close()
 	for rows.Next(){
 		var user_id int
 		var email string
@@ -90,6 +87,7 @@ func (update *Update)SelectAll() (map[int][]string){
 }
 
 func (update *Update)InsertDataSet(dataSet map[int][]string){
+	// Update method
 	// Takes a (int, string[])map of data and insert them
 	// into one table in the database
 	db := update.db
@@ -113,8 +111,8 @@ func (update *Update)InsertDataSet(dataSet map[int][]string){
 func (update *Update)InsertDataShards(dataSet map[int][]string){
 	// Takes a (int, string[])map of data and insert them
 	// into different table according to the user_id
-	// This should be use when trying to insert a larger amount
-	// it would be faster to user InsertDataSet with smaller numbers
+	// This should be used when trying to insert a larger amount
+	// it would be faster to use InsertDataSet with smaller numbers
 	db := update.db
 	for userid, emails := range dataSet{
 		tableName := "unsub_" + strconv.Itoa(userid)
