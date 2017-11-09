@@ -15,8 +15,8 @@ func TestDataSize(t *testing.T){
 
 	assert.Equal(t, len(data), expected_num_users)
 	for _, emails := range data{
-		assert.Equal(t, len(emails) >= expected_min_emails, true)
-		assert.Equal(t, len(emails) <= expected_max_emails, true)
+		assert.True(t, len(emails) >= expected_min_emails)
+		assert.True(t, len(emails) <= expected_max_emails)
 	}
 }
 
@@ -33,8 +33,8 @@ func TestEmailAddressCharLength(t * testing.T){
 		}
 		numEmails += len(emails)
 	}
-	assert.Equal(t, charSum/numEmails >= 21, true)
-	assert.Equal(t, charSum/numEmails <= 23, true)
+	assert.True(t, charSum/numEmails >= 21)
+	assert.True(t, charSum/numEmails <= 23)
 
 	charSum = 0
 	numEmails = 0
@@ -44,8 +44,8 @@ func TestEmailAddressCharLength(t * testing.T){
 		}
 		numEmails += len(emails)
 	}
-	assert.Equal(t, charSum/numEmails >= 21, true)
-	assert.Equal(t, charSum/numEmails <= 23, true)
+	assert.True(t, charSum/numEmails >= 21)
+	assert.True(t, charSum/numEmails <= 23)
 }
 
 func TestUniqueEmails(t *testing.T){
