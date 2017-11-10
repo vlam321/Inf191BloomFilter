@@ -9,3 +9,11 @@ API endpoints to access the following functionalities:
 		after you've completed your
 		current tasks)
 */
+package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("TODO")
+}
+

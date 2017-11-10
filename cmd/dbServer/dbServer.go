@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"Inf191BloomFilter/src/databaseAccessObj"
+	"Inf191BloomFilter/databaseAccessObj"
 	"net/http"
 	"encoding/json"
 )

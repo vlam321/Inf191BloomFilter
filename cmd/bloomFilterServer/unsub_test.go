@@ -5,16 +5,17 @@ to the dbServer and bloomFilterServer
 
 package main
 import (
-	"Inf191BloomFilter/src/bloomDataGenerator"
+	"Inf191BloomFilter/bloomDataGenerator"
 	"encoding/json"
 	"bytes"
 	"fmt"
 	"net/http"
+	"testing"
 )
 
 const host = "http://localhost:9090/insertUserEmail"
 
-func main(){
+func TestUnsub(t *testing.T){
 	val := bloomDataGenerator.GenData(1, 2, 10)
 	b := new(bytes.Buffer)
 	json.NewEncoder(b).Encode(val)
