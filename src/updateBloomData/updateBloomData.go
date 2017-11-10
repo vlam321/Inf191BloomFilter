@@ -23,7 +23,10 @@ func New() *BloomFilter {
 
 // UpdateBloomFilter is used when more unsubscribed emails have been added to the database
 func (bf *BloomFilter) UpdateBloomFilter() {
-
+	var arrayOfUserIDEmail = getArrayOfUserIDEmail()
+	for i := range arrayOfUserIDEmail {
+		bf.bloomFilter.AddString(arrayOfUserIDEmail[i])
+	}
 }
 
 // RepopulateBloomFilter will be called if unsubscribed emails are removed from the
@@ -51,4 +54,16 @@ func getArrayOfUserIDEmail() []string {
 	}
 	dao.CloseConnection()
 	return arrayOfUserIDEmail
+}
+
+//GetArrayOfUnsubscribedEmails given a list of strings will return a list of those
+//that exist in the bloom filter
+func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(arrayOfEmails []string) []string {
+	var arrayOfUnsubscribedEmails []string
+	for i := range arrayOfEmails {
+		if bf.bloomFilter.TestString(arrayOfEmails[i]) {
+			arrayOfUnsubscribedEmails = append(arrayOfUnsubscribedEmails, arrayOfEmails[i])
+		}
+	}
+	return arrayOfUnsubscribedEmails
 }
