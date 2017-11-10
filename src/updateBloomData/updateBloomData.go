@@ -10,28 +10,45 @@ import (
 const bitArraySize = 10000
 const numberOfHashFunction = 5
 
+// BloomFilter struct holds the pointer to the bloomFilter object
 type BloomFilter struct {
 	bloomFilter *bloom.BloomFilter
 }
 
+// New is called to instantiate a new BloomFilter object
 func New() *BloomFilter {
 	bloomFilter := bloom.New(bitArraySize, numberOfHashFunction)
 	return &BloomFilter{bloomFilter}
 }
 
+// UpdateBloomFilter is used when more unsubscribed emails have been added to the database
 func (bf *BloomFilter) UpdateBloomFilter() {
-	// used when more unsubscribed emails have been added to the database
+
 }
 
+// RepopulateBloomFilter will be called if unsubscribed emails are removed from the
+// database (customers resubscribe to emails)
 func (bf *BloomFilter) RepopulateBloomFilter() {
-	// used when unsubscribed emails are removed from the database - resubscribed emails example
 	newBloomFilter := bloom.New(bitArraySize, numberOfHashFunction)
+	var arrayOfUserIDEmail []string
+	arrayOfUserIDEmail = getArrayOfUserIDEmail()
+	for i := range arrayOfUserIDEmail {
+		newBloomFilter.AddString(arrayOfUserIDEmail[i])
+	}
+	bf.bloomFilter = newBloomFilter.Copy()
+}
+
+// getArrayOfUserIDEmail retrieves all records in the database and returns an array
+// of strings in the form of userid_email
+func getArrayOfUserIDEmail() []string {
+	var arrayOfUserIDEmail []string
 	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
 	databaseResultMap := dao.SelectAll()
 	for key, value := range databaseResultMap {
 		for i := range value {
-			newBloomFilter.AddString(strconv.Itoa(int(key)) + "_" + value[i])
+			arrayOfUserIDEmail = append(arrayOfUserIDEmail, strconv.Itoa(int(key))+"_"+value[i])
 		}
 	}
-	bf.bloomFilter = newBloomFilter.Copy()
+	dao.CloseConnection()
+	return arrayOfUserIDEmail
 }
