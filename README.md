@@ -10,11 +10,11 @@ To start contributing to this project, simply fork this repository and clone it 
 ## Dependencies
 The following dependencies will be needed to run some of the files in this repo. Use the commands below to install them if needed.
 ### Go MySQL Driver
-` go get -u github.com/go-sql-driver/mysql`
+` $ go get -u github.com/go-sql-driver/mysql`
 ### Bloom Filter
-`go get -u github.com/willf/bloom`
+` $ go get -u github.com/willf/bloom`
 ### Testify
-`go get github.com/stretchr/testify`
+` $ go get github.com/stretchr/testify`
 
 ## Test Data Generator
 Test Data can be generated using the bloomDataGenerator package. The function GenData will require 3 arguments: amount of users, and a minimum and maximum values to set the range for the number of email addresses to be generated.
