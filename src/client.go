@@ -1,4 +1,0 @@
-/* This file will contain functionality for a simulated
-client. The client is responsible for makine http requests
-to the dbServer and bloomFilterServer
-*/
