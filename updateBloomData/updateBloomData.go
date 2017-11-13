@@ -1,7 +1,7 @@
 package updateBloomData
 
 import (
-	"Inf191BloomFilter/src/databaseAccessObj"
+	"Inf191BloomFilter/databaseAccessObj"
 	"strconv"
 
 	"github.com/willf/bloom"

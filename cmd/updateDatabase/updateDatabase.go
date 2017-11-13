@@ -16,6 +16,11 @@ func checkErr(err error){
 }
 
 func main(){
+	/*TODO:
+		- Change functionality to not use be hosted
+		  on a server
+		- Use cli-arguments to update different the database
+	*/
 	http.HandleFunc("/insertUserEmail", insertUserEmail)
 	err := http.ListenAndServe(":9090", nil)
 	checkErr(err)

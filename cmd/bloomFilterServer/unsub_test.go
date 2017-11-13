@@ -4,8 +4,8 @@ to the dbServer and bloomFilterServer
 */
 
 package main
+
 import (
-	"Inf191BloomFilter/bloomDataGenerator"
 	"encoding/json"
 	"bytes"
 	"fmt"
@@ -13,13 +13,29 @@ import (
 	"testing"
 )
 
-const host = "http://localhost:9090/insertUserEmail"
+const membership_endpoint = "http://localhost:9090/members"
+
+func checkErr(err error) {
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+type Payload struct {
+	UserId int
+	Emails []string
+}
 
 func TestUnsub(t *testing.T){
-	val := bloomDataGenerator.GenData(1, 2, 10)
-	b := new(bytes.Buffer)
-	json.NewEncoder(b).Encode(val)
+	payload := Payload{1, []string{"sodfd", "fdsafasd"}}
+	buff := new(bytes.Buffer)
 
-	res, _ := http.Post(host, "application/json; charset=utf-8", b)
+	data, err := json.Marshal(payload)
+	checkErr(err)
+
+	err = json.NewEncoder(buff).Encode(data)
+	checkErr(err)
+
+	res, _ := http.Post(membership_endpoint, "application/json; charset=utf-8", buff)
 	fmt.Println(res)
 }
