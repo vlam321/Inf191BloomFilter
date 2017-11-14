@@ -1,4 +1,4 @@
-package updateBloomData
+package bloomManager
 
 import (
 	"Inf191BloomFilter/databaseAccessObj"
