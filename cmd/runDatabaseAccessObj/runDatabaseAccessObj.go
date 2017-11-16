@@ -1,14 +1,27 @@
 package main // probably need to convert this to a proper go test
 
+
 import (
-	"Inf191BloomFilter/bloomDataGenerator"
-	"Inf191BloomFilter/databaseAccessObj"
+	// "Inf191BloomFilter/bloomDataGenerator"
+	// "Inf191BloomFilter/databaseAccessObj"
 	"fmt"
-	"os"
-	"strconv"
-	"time"
+	"flag"
+	// "time"
 )
 
+const instructions = `
+	Use the following flags to update the current MySQL persistent datastore:
+		-repopulate []
+		-add []
+		-del []
+`
+
+type UserInputs struct {
+	command string
+	users int
+	minEmail int
+	maxEmail int
+}
 
 func checkErr(err error){
 	// check error from database if any
@@ -17,10 +30,29 @@ func checkErr(err error){
 	}
 }
 
+// Grabs the command line argments
+// and return a Inputs object containinf the
+// values. And a nil if no cli atgements were
+// given
+func getCommandLineInputs() UserInputs {
+	cmdPtr := flag.String("cmd", "", "Possible commands: 'repopulate', 'add', 'del'")
+	userPtr := flag.Int("users", 1, "Possible inputs: integers > 0")
+	minEmailPtr := flag.Int("minEmail", 1, "Possible inputs: integer > 0")
+	maxEmailPtr := flag.Int("maxEmail", 2, "Possible inputs: integer > minEmail")
+	flag.Parse()
+	return UserInputs{*cmdPtr, *userPtr, *minEmailPtr, *maxEmailPtr}
+}
 
-func main(){
+func main() {
+	userInputs := getCommandLineInputs()
+
+	/*
 	// command line inputs
 	clInputs := os.Args[1:]
+	if len(clInputs) == 0 {
+		fmt.Println(instructions)
+		return
+	}
 
 	// number of user ids
 	numUsers, err := strconv.Atoi(clInputs[0])
@@ -53,6 +85,8 @@ func main(){
 	elapsed = time.Since(start)
 	fmt.Printf("Done. Took %s\n\n", elapsed)
 
+	*/
+
 	/*
 	fmt.Println("Clearing current db...")
 	update.Clear()
@@ -66,5 +100,6 @@ func main(){
 	fmt.Printf("Done. Took %s\n", elapsed)
 	*/
 
-	update.CloseConnection()
+	//	update.CloseConnection()
+
 }
