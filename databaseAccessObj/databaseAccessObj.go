@@ -1,6 +1,7 @@
 package databaseAccessObj
 
 import(
+	"fmt"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
@@ -56,6 +57,7 @@ func (update *Update)CloseConnection(){
 }
 
 func (update *Update)Select(dataSet map[int][]string) (map[int][]string){
+	// Select items that exist both in input dataSet and database
 	db := update.db
 	result := make(map[int][]string)
 	for userid, emails := range dataSet{
@@ -80,6 +82,26 @@ func (update *Update)Select(dataSet map[int][]string) (map[int][]string){
 			checkErr(err)
 			result[user_id] = append(result[user_id], email)
 		}
+	}
+	return result
+}
+
+func (update *Update)SelectTable(tableNum int) (map[int][]string){
+	// Select all items from a single table
+	db := update.db
+	result := make(map[int][]string)
+	tableName := "unsub_" + strconv.Itoa(tableNum)
+	sqlStr := "SELECT user_id, email FROM " + tableName
+	fmt.Println(sqlStr)
+	rows, err := db.Query(sqlStr)
+	checkErr(err)
+	defer rows.Close()
+	for rows.Next(){
+		var user_id int
+		var email string
+		err = rows.Scan(&user_id, &email)
+		checkErr(err)
+		result[user_id] = append(result[user_id], email)
 	}
 	return result
 }
