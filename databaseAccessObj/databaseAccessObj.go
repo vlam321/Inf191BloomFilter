@@ -1,7 +1,6 @@
 package databaseAccessObj
 
 import(
-	"fmt"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
@@ -18,6 +17,17 @@ type Update struct {
 	db *sql.DB
 }
 
+type Pair struct{
+	// pair struct that holds user_id:[emails]
+	id int
+	emails []string
+}
+
+func modId(userid int) int{
+	// mod user_id by 15
+	return int(math.Mod(float64(userid),15.0))
+}
+
 func New(dsn string) *Update{
 	// input: dsn = 'username:password@/database'
 	// create new connection
@@ -32,7 +42,6 @@ func (update *Update)hasTable(databaseName, tableName string) bool{
 	// For testing purposes
 	// Checks if the specify tablename exist in the specified database
 	db := update.db
-
 	var check string
 	err := db.QueryRow("SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name = ? LIMIT 1", databaseName, tableName).Scan(&check)
 	if(err == sql.ErrNoRows){
@@ -57,11 +66,11 @@ func (update *Update)CloseConnection(){
 }
 
 func (update *Update)Select(dataSet map[int][]string) (map[int][]string){
-	// Select items that exist both in input dataSet and database
+	// Return items that exist both in input dataSet and database
 	db := update.db
 	result := make(map[int][]string)
 	for userid, emails := range dataSet{
-		tableName := "unsub_" + strconv.Itoa(int(math.Mod(float64(userid),15.0)))
+		tableName := "unsub_" + strconv.Itoa(modId(userid))
 		sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = " + strconv.Itoa(userid) + " AND ("
 		var vals []interface{}
 		for i := range(emails){
@@ -74,6 +83,7 @@ func (update *Update)Select(dataSet map[int][]string) (map[int][]string){
 		if(err == sql.ErrNoRows){
 			continue
 		}
+		checkErr(err)
 		defer rows.Close()
 		for rows.Next(){
 			var user_id int
@@ -92,7 +102,6 @@ func (update *Update)SelectTable(tableNum int) (map[int][]string){
 	result := make(map[int][]string)
 	tableName := "unsub_" + strconv.Itoa(tableNum)
 	sqlStr := "SELECT user_id, email FROM " + tableName
-	fmt.Println(sqlStr)
 	rows, err := db.Query(sqlStr)
 	checkErr(err)
 	defer rows.Close()
@@ -106,36 +115,23 @@ func (update *Update)SelectTable(tableNum int) (map[int][]string){
 	return result
 }
 
-func (update *Update)InsertDataSet(dataSet map[int][]string){
-	// Update method
-	// Takes a (int, string[])map of data and insert them
-	// into one table in the database
+func (update *Update)Insert(dataSet map[int][]string){
+	// Takes (int, string[])map of data and inserts
+	// listed items into database
 	db := update.db
-	stmt, err := db.Prepare(`INSERT INTO unsub_0 (user_id, email) VALUES (?,?)`)
-	checkErr(err)
-	_, err = db.Exec("BEGIN")
-	checkErr(err)
+	shardMap := make(map[int][]Pair)
 	for userid, emails := range dataSet{
-		for i := range(emails){
-			_, err := stmt.Exec(userid, emails[i])
-			checkErr(err)
-		}
+		shardMap[modId(userid)] = append(shardMap[modId(userid)], Pair{userid, emails})
 	}
-	_, err = db.Exec("COMMIT")
-	checkErr(err)
-}
-
-func (update *Update)BatchInsert(dataSet map[int][]string){
-	// Takes a (int, string[])map of data and insert them
-	// into different table according to the user_id
-	db := update.db
-	for userid, emails := range dataSet{
-		tableName := "unsub_" + strconv.Itoa(int(math.Mod(float64(userid),15.0)))
+	for tabNum, pairs := range shardMap{
+		tableName := "unsub_" + strconv.Itoa(tabNum)
 		sqlStr := "INSERT INTO " + tableName + "(user_id, email) VALUES "
 		var vals []interface{}
-		for i := range(emails){
-			sqlStr += "(" + strconv.Itoa(userid) + ", ?), "
-			vals = append(vals, dataSet[userid][i])
+		for p := range pairs{
+			for e := range(pairs[p].emails){
+				sqlStr += "(?, ?), "
+				vals = append(vals, pairs[p].id, pairs[p].emails[e])
+			}
 		}
 		sqlStr = sqlStr[0:len(sqlStr)-2]
 		stmt, err := db.Prepare(sqlStr)
@@ -150,7 +146,7 @@ func (update *Update)Delete(dataSet map[int][]string){
 	// listed items from database
 	db := update.db
 	for userid, emails := range dataSet{
-		tableName := "unsub_" + strconv.Itoa(int(math.Mod(float64(userid),15.0)))
+		tableName := "unsub_" + strconv.Itoa(modId(userid))
 		sqlStr := "DELETE FROM " + tableName + " WHERE user_id = " + strconv.Itoa(userid) + " AND ("
 		var vals []interface{}
 		for i:= range(emails){
