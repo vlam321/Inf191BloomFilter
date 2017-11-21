@@ -18,18 +18,18 @@ The following dependencies will be needed to run some of the files in this repo.
 ### Graphite API client
 ` $ go get github.com/marpaia/graphite-golang`
 
-##Grafana and Graphite Setup
+## Grafana and Graphite Setup
 1. Download and install [Docker Toolbox](https://www.docker.com/products/docker-toolbox)
 2. Open Docker Quickstart Terminal
 3. Pull the Grafana and Graphite images with the following commands:
 ```
-docker pull grafana/grafana
-docker pull hopsoft/graphite-statsd
+$ docker pull grafana/grafana
+$ docker pull hopsoft/graphite-statsd
 ```
 4. Run the images in the background using the following commands:
 ```
-docker run -d --name=grafana -p 3000:3000 grafana/grafana
-docker run -d --name graphite --restart=always -p 80:80 -p 2003-2004:2003-2004 -p 2023-2024:2023-2024 -p 8125:8125/udp -p 8126:8126 hopsoft/graphite-statsd
+$ docker run -d --name=grafana -p 3000:3000 grafana/grafana
+$ docker run -d --name graphite --restart=always -p 80:80 -p 2003-2004:2003-2004 -p 2023-2024:2023-2024 -p 8125:8125/udp -p 8126:8126 hopsoft/graphite-statsd
 ```
 5. Make sure that Grafana and Graphite are running by going to localhost at port 80 and 3000 (separately!)
 6. Run graph.go under cmd/graph to see that it is affecting that the graphs in your Graphite page 
