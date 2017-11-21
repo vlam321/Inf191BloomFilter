@@ -46,7 +46,7 @@ func (bf *BloomFilter) RepopulateBloomFilter() {
 func getArrayOfUserIDEmail() []string {
 	var arrayOfUserIDEmail []string
 	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
-	databaseResultMap := dao.SelectAll()
+	databaseResultMap := dao.SelectTable(0) // todo: argument to use output shard num from router
 	for key, value := range databaseResultMap {
 		for i := range value {
 			arrayOfUserIDEmail = append(arrayOfUserIDEmail, strconv.Itoa(int(key))+"_"+value[i])
