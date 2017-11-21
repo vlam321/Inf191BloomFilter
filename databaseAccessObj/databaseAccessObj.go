@@ -1,6 +1,7 @@
 package databaseAccessObj
 
 import(
+	"time"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	"strconv"
@@ -96,6 +97,30 @@ func (update *Update)Select(dataSet map[int][]string) (map[int][]string){
 	return result
 }
 
+func (update *Update)SelectByTimestamp(ts time.Time) (map[int][]string){
+	// Select all items from database where input time after item's timestamp
+	db := update.db
+	result := make(map[int][]string)
+	for i := 0; i < 15; i++{
+		tableName := "unsub_" + strconv.Itoa(i)
+		sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE ts >= ?"
+		rows, err := db.Query(sqlStr, ts.String())
+		if(err == sql.ErrNoRows){
+			continue
+		}
+		checkErr(err)
+		defer rows.Close()
+		for rows.Next(){
+			var user_id int
+			var email string
+			err = rows.Scan(&user_id, &email)
+			checkErr(err)
+			result[user_id] = append(result[user_id], email)
+		}
+	}
+	return result
+}
+
 func (update *Update)SelectTable(tableNum int) (map[int][]string){
 	// Select all items from a single table
 	db := update.db
@@ -125,11 +150,11 @@ func (update *Update)Insert(dataSet map[int][]string){
 	}
 	for tabNum, pairs := range shardMap{
 		tableName := "unsub_" + strconv.Itoa(tabNum)
-		sqlStr := "INSERT INTO " + tableName + "(user_id, email) VALUES "
+		sqlStr := "INSERT INTO " + tableName + "(user_id, email, ts) VALUES "
 		var vals []interface{}
 		for p := range pairs{
 			for e := range(pairs[p].emails){
-				sqlStr += "(?, ?), "
+				sqlStr += "(?, ?, CURRENT_TIMESTAMP), "
 				vals = append(vals, pairs[p].id, pairs[p].emails[e])
 			}
 		}
