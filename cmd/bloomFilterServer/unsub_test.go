@@ -3,15 +3,16 @@ client. The client is responsible for makine http requests
 to the dbServer and bloomFilterServer
 */
 
-package main
+package bloomFilterServer
 
 import (
-	"encoding/json"
-	"bytes"
+	//"encoding/json"
+	//"bytes"
 	"fmt"
-	"net/http"
+	//"net/http"
 	"testing"
 	"Inf191BloomFilter/bloomDataGenerator"
+	"Inf191BloomFilter/databaseAccessObj"
 )
 
 const membership_endpoint = "http://localhost:9090/members"
@@ -28,25 +29,41 @@ type Payload struct {
 }
 
 func TestUnsub(t *testing.T) {
-	/*
-		1. gen random user_email pairs, and save to a var
-		2. insert the user_email pairs intot the db
-		3. call BF server to update the bit array
-		4. gen more data and concatenate the saved pairs to the new ones
-		5. run the concatenate user_email pairs against the BF server, and 
-		   make sure that only the first saved ones are in the response
-	*/
-	payload := Payload{1, []string{"sodfd", "fdsafasd"}}
+	// var payload Payload
+	var dataSum []string
 	buff := new(bytes.Buffer)
 
+	// Generate random id_email pairs (positives) and save it in a var
+	inDB := bloomDataGenerator.GenData(1, 100, 200)
+
+	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
+	// Insert new data in the db
+	dao.Insert(inDB)
+
+	// Call BF server to update the bit array
+	// res, err := http.Get(update_bit_array_endpoint)
+	// checkErr(err)
+
+	// Generate more raandom id_email pairs (negatives) and save it ina var
+	notInDB := bloomDataGenerator.GenData(1, 50, 100)
+
+	for userid, emails := range inDB {
+		dataSum = append(emails, notInDB[userid]...)
+	}
+
+	// Put values into payload to be sent to the server later
+	payload = Payload{0, dataSum}
+
+	// convert to json
 	data, err := json.Marshal(payload)
 	checkErr(err)
 
+	// encode to bytes buffer
 	err = json.NewEncoder(buff).Encode(data)
 	checkErr(err)
 
+	// requst for true memberships
 	res, _ := http.Post(membership_endpoint, "application/json; charset=utf-8", buff)
-	fmt.Println(res)
 }
 
 func TestNewDataAdded(t *testing.T) {
