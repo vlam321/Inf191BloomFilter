@@ -15,12 +15,6 @@ import (
 
 const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
 
-func checkErr(err error) {
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
 func TestUnsub(t *testing.T) {
 	payload := Payload{1, []string{"sodfd", "fdsafasd"}}
 	buff := new(bytes.Buffer)
@@ -31,6 +25,7 @@ func TestUnsub(t *testing.T) {
 	err = json.NewEncoder(buff).Encode(data)
 	checkErr(err)
 
-	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
+	res, err := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
 	fmt.Println(res)
+	fmt.Println(err)
 }
