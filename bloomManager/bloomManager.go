@@ -22,9 +22,12 @@ func New() *BloomFilter {
 	return &BloomFilter{bloomFilter}
 }
 
-// UpdateBloomFilter is used when more unsubscribed emails have been added to the database
+// UpdateBloomFilter will be called if unsubscribed emails are added to the database
+// (unsubscribe emails), can be used for initially populating the bloom filter and
+// updating the bloom filter
 func (bf *BloomFilter) UpdateBloomFilter() {
-	var arrayOfUserIDEmail = getArrayOfUserIDEmail()
+	var arrayOfUserIDEmail []string
+	arrayOfUserIDEmail = getArrayOfUserIDEmail()
 	for i := range arrayOfUserIDEmail {
 		bf.bloomFilter.AddString(arrayOfUserIDEmail[i])
 	}
