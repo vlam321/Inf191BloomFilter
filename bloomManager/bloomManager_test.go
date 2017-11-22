@@ -14,30 +14,34 @@ func TestUpdateBloomFilter(t *testing.T) {
 	arrayOfEmails := []string{"test1@uci.edu", "test2@uci.edu", "test3@uci.edu"}
 	databaseTestMap := make(map[int][]string)
 	databaseTestMap[0] = arrayOfEmails
+	// clean out database of test emails
+	dao.Delete(databaseTestMap)
 	dao.Insert(databaseTestMap)
 	bf.UpdateBloomFilter()
 	assert.Equal(t, true, bf.bloomFilter.TestString("0_test1@uci.edu"))
 	assert.Equal(t, true, bf.bloomFilter.TestString("0_test2@uci.edu"))
 	assert.Equal(t, false, bf.bloomFilter.TestString("0_test0@gmail.com"))
 	assert.Equal(t, true, bf.bloomFilter.TestString("0_test3@uci.edu"))
-	dao.Delete(databaseTestMap)
+	dao.CloseConnection()
 }
 
 func TestUpdateBloomFilter2(t *testing.T) {
 	// testing update bloom filter
 	bf := New()
-	bf.UpdateBloomFilter()
-	assert.Equal(t, false, bf.bloomFilter.TestString("0_catlover@uci.edu"))
-	assert.Equal(t, false, bf.bloomFilter.TestString("0_snowcone3@uci.edu"))
 	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
 	arrayOfEmails := []string{"catlover@uci.edu", "snowcone3@uci.edu"}
 	databaseTestMap := make(map[int][]string)
 	databaseTestMap[0] = arrayOfEmails
+	// clean out database of test emails
+	dao.Delete(databaseTestMap)
+	bf.UpdateBloomFilter()
+	assert.Equal(t, false, bf.bloomFilter.TestString("0_catlover@uci.edu"))
+	assert.Equal(t, false, bf.bloomFilter.TestString("0_snowcone3@uci.edu"))
 	dao.Insert(databaseTestMap)
 	bf.UpdateBloomFilter()
 	assert.Equal(t, true, bf.bloomFilter.TestString("0_catlover@uci.edu"))
 	assert.Equal(t, true, bf.bloomFilter.TestString("0_snowcone3@uci.edu"))
-	dao.Delete(databaseTestMap)
+	dao.CloseConnection()
 }
 
 func TestRepopulateBloomFilter(t *testing.T) {
@@ -47,6 +51,8 @@ func TestRepopulateBloomFilter(t *testing.T) {
 	arrayOfEmails := []string{"ilovepadthai@gmail.com", "eatmyshorts@yahoo.com"}
 	databaseTestMap := make(map[int][]string)
 	databaseTestMap[0] = arrayOfEmails
+	// clean out database of test emails
+	dao.Delete(databaseTestMap)
 	// add two records to database before test
 	dao.Insert(databaseTestMap)
 	bf.UpdateBloomFilter()
@@ -59,6 +65,7 @@ func TestRepopulateBloomFilter(t *testing.T) {
 	assert.Equal(t, false, bf.bloomFilter.TestString("0_ilovepadthai@gmail.com"))
 	assert.Equal(t, false, bf.bloomFilter.TestString("0_eatmyshorts@yahoo.com"))
 	assert.Equal(t, false, bf.bloomFilter.TestString("0_test2@gmail.com"))
+	dao.CloseConnection()
 }
 
 func TestGetArrayOfUnsubscribedEmails(t *testing.T) {
@@ -73,6 +80,8 @@ func TestGetArrayOfUnsubscribedEmails(t *testing.T) {
 	arrayOfEmails2 := []string{"friedchicken@gmail.com", "chocolatebar@yahoo.com"}
 	databaseTestMap := make(map[int][]string)
 	databaseTestMap[0] = arrayOfEmails2
+	// clean out database of test emails
+	dao.Delete(databaseTestMap)
 	dao.Insert(databaseTestMap)
 	bf.UpdateBloomFilter()
 	var emailToCheck []string
@@ -80,5 +89,5 @@ func TestGetArrayOfUnsubscribedEmails(t *testing.T) {
 	assert.Equal(t, 2, len(emailToCheck))
 	assert.Equal(t, "0_friedchicken@gmail.com", emailToCheck[0])
 	assert.Equal(t, "0_chocolatebar@yahoo.com", emailToCheck[1])
-	dao.Delete(databaseTestMap)
+	dao.CloseConnection()
 }
