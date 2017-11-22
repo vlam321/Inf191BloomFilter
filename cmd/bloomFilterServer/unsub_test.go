@@ -6,21 +6,38 @@ to the dbServer and bloomFilterServer
 package bloomFilterServer
 
 import (
+	"Inf191BloomFilter/bloomDataGenerator"
+	"Inf191BloomFilter/databaseAccessObj"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"Inf191BloomFilter/bloomDataGenerator"
-	"Inf191BloomFilter/databaseAccessObj"
+	"testing"
 )
 
 const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
+
+type Payload struct {
+	UserId int
+	Emails []string
+}
+
+func checkErr(err error) {
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
+type Result struct {
+	Trues []string
+}
 
 func TestUnsub(t *testing.T) {
 	// var payload Payload
 	var dataSum []string
 	buff := new(bytes.Buffer)
+	var payload Payload
 
 	// Generate random id_email pairs (positives) and save it in a var
 	inDB := bloomDataGenerator.GenData(1, 100, 200)
@@ -75,6 +92,4 @@ func TestUnsub(t *testing.T) {
 	// checkErr(err2)
 
 	// fmt.Println(payload2)
-	}
 }
-
