@@ -41,6 +41,6 @@ Test Data can be generated using the bloomDataGenerator package. The function Ge
 To populate database with these data, ensure that your database, use the InsertDataSet function and a map[int][]string as instance as argument.
 ```
 data := bloomDataGenerator.GenData(5, 100, 1000)
-update := updatebloomData.New(dsn)
-update.InsertDataSet(data)
+dao := databaseAccessObj.New(dsn)
+dao.Insert(data)
 ```
