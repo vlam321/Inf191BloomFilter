@@ -6,14 +6,14 @@ to the dbServer and bloomFilterServer
 package main
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
 )
 
-const membership_endpoint = "http://localhost:9090/members"
+const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
 
 func checkErr(err error) {
 	if err != nil {
@@ -21,12 +21,7 @@ func checkErr(err error) {
 	}
 }
 
-type Payload struct {
-	UserId int
-	Emails []string
-}
-
-func TestUnsub(t *testing.T){
+func TestUnsub(t *testing.T) {
 	payload := Payload{1, []string{"sodfd", "fdsafasd"}}
 	buff := new(bytes.Buffer)
 
@@ -36,6 +31,6 @@ func TestUnsub(t *testing.T){
 	err = json.NewEncoder(buff).Encode(data)
 	checkErr(err)
 
-	res, _ := http.Post(membership_endpoint, "application/json; charset=utf-8", buff)
+	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
 	fmt.Println(res)
 }
