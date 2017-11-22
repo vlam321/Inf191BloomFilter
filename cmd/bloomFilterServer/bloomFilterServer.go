@@ -13,6 +13,7 @@ API endpoints to access the following functionalities:
 package main
 
 import (
+	"Inf191BloomFilter/bloomManager"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -22,6 +23,10 @@ import (
 type Payload struct {
 	UserId int
 	Emails []string
+}
+
+type Result struct {
+	Trues []string
 }
 
 //handleUpdate will update the respective bloomFilter
@@ -37,39 +42,30 @@ func checkErr(err error) {
 
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	var buff []byte
-	var payload interface{}
+	var payload Payload
 
 	err := json.NewDecoder(r.Body).Decode(&buff)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
 		return
 	}
-	payload = json.Unmarshal(buff, payload)
+	err = json.Unmarshal(buff, &payload)
+	checkErr(err)
 
 	fmt.Println(payload)
-	/*
-		var idEmail string
-		var arrayOfEmails []string
-		for i := range p.Emails {
-			idEmail = (strconv.Itoa(p.UserId) + p.Emails[i])
-			arrayOfEmails = append(arrayOfEmails, idEmail)
-		}
 
-		bf := bloomManager.New()
-		var c []string
-		c = bf.GetArrayOfUnsubscribedEmails(arrayOfEmails)
+	bf := bloomManager.New()
+	emails := bf.GetArrayOfUnsubscribedEmails(payload.Emails)
+	filteredEmails := Result{emails}
+	// buff2 := new(bytes.Buffer)
+	// data, err := json.Marshal(filteredEmails)
+	// checkErr(err)
 
-		buff := new(bytes.Buffer)
-		data, err := json.Marshal(c)
-		checkErr(err)
-		fmt.Println("1")
-		err = json.NewEncoder(buff).Encode(&data)
-		checkErr(err)
-		fmt.Println("2")
-		fmt.Println(data)
+	js, err := json.Marshal(filteredEmails)
+	checkErr(err)
 
-		w.Write(data)
-	*/
+	fmt.Println(js)
+	w.Write(js)
 	//return the result in whatever format use http.response
 	//look into resturing body
 	//encode to type.buffer

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"testing"
 )
@@ -25,7 +26,29 @@ func TestUnsub(t *testing.T) {
 	err = json.NewEncoder(buff).Encode(data)
 	checkErr(err)
 
-	res, err := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
-	fmt.Println(res)
-	fmt.Println(err)
+	var deres []int8
+	var arr Result
+	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(body)
+
+	err = json.NewDecoder(res.Body).Decode(&deres)
+
+	err = json.Unmarshal(body, &arr)
+	checkErr(err)
+	fmt.Println(arr.Trues)
+
+	// var buff2 []byte
+	// var payload2 Payload
+
+	// err2 := json.NewDecoder(res.Body).Decode(&buff2)
+	// checkErr(err2)
+	// err2 = json.Unmarshal(buff2, &payload2)
+	// checkErr(err2)
+
+	// fmt.Println(payload2)
+
 }
