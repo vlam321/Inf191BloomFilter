@@ -6,27 +6,16 @@ to the dbServer and bloomFilterServer
 package bloomFilterServer
 
 import (
-	//"encoding/json"
-	//"bytes"
+	"bytes"
+	"encoding/json"
 	"fmt"
-	//"net/http"
-	"testing"
+	"io/ioutil"
+	"net/http"
 	"Inf191BloomFilter/bloomDataGenerator"
 	"Inf191BloomFilter/databaseAccessObj"
 )
 
-const membership_endpoint = "http://localhost:9090/members"
-
-func checkErr(err error) {
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
-type Payload struct {
-	UserId int
-	Emails []string
-}
+const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
 
 func TestUnsub(t *testing.T) {
 	// var payload Payload
@@ -62,27 +51,30 @@ func TestUnsub(t *testing.T) {
 	err = json.NewEncoder(buff).Encode(data)
 	checkErr(err)
 
-	// requst for true memberships
-	res, _ := http.Post(membership_endpoint, "application/json; charset=utf-8", buff)
+	var deres []int8
+	var arr Result
+	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
+
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+
+	fmt.Println(body)
+
+	err = json.NewDecoder(res.Body).Decode(&deres)
+
+	err = json.Unmarshal(body, &arr)
+	checkErr(err)
+	fmt.Println(arr.Trues)
+
+	// var buff2 []byte
+	// var payload2 Payload
+
+	// err2 := json.NewDecoder(res.Body).Decode(&buff2)
+	// checkErr(err2)
+	// err2 = json.Unmarshal(buff2, &payload2)
+	// checkErr(err2)
+
+	// fmt.Println(payload2)
+	}
 }
 
-func TestNewDataAdded(t *testing.T) {
-	/*
-		1. gen rand data, store it in true dataset var and insert into db
-		2. run data against BF and make sure returns empty slice
-		3. insert data into db using doa
-		4. run request for updating BF bit array
-		5. rerun data again BF and make sure len(res) == len(data)
-	*/
-}
-
-
-func TestDeleteData(t * testing.T) {
-	/*
-		1. use dao to grab some data pairs, store in a var
-		2. use dao to remove these pairs from the db
-		3. call BF server to update the bit array
-		4. Run the saved pairs against the BF server and make sure the get
-		an empty array
-	*/
-}
