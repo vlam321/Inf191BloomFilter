@@ -3,7 +3,7 @@ client. The client is responsible for makine http requests
 to the dbServer and bloomFilterServer
 */
 
-package main
+package bloomFilterServer
 
 import (
 	"bytes"
@@ -11,18 +11,43 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"testing"
+	"Inf191BloomFilter/bloomDataGenerator"
+	"Inf191BloomFilter/databaseAccessObj"
 )
 
 const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
 
 func TestUnsub(t *testing.T) {
-	payload := Payload{1, []string{"sodfd", "fdsafasd"}}
+	// var payload Payload
+	var dataSum []string
 	buff := new(bytes.Buffer)
 
+	// Generate random id_email pairs (positives) and save it in a var
+	inDB := bloomDataGenerator.GenData(1, 100, 200)
+
+	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
+	// Insert new data in the db
+	dao.Insert(inDB)
+
+	// Call BF server to update the bit array
+	// res, err := http.Get(update_bit_array_endpoint)
+	// checkErr(err)
+
+	// Generate more raandom id_email pairs (negatives) and save it ina var
+	notInDB := bloomDataGenerator.GenData(1, 50, 100)
+
+	for userid, emails := range inDB {
+		dataSum = append(emails, notInDB[userid]...)
+	}
+
+	// Put values into payload to be sent to the server later
+	payload = Payload{0, dataSum}
+
+	// convert to json
 	data, err := json.Marshal(payload)
 	checkErr(err)
 
+	// encode to bytes buffer
 	err = json.NewEncoder(buff).Encode(data)
 	checkErr(err)
 
@@ -50,5 +75,6 @@ func TestUnsub(t *testing.T) {
 	// checkErr(err2)
 
 	// fmt.Println(payload2)
-
+	}
 }
+

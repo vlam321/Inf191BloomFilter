@@ -1,46 +1,107 @@
-package main
+package main // probably need to convert this to a proper go test
 
 import (
+	// "Inf191BloomFilter/bloomDataGenerator"
+	// "Inf191BloomFilter/databaseAccessObj"
+	"flag"
 	"fmt"
-	"Inf191BloomFilter/databaseAccessObj"
-	"net/http"
-	"encoding/json"
+	"os"
+	// "time"
 )
 
-const dsn = "bloom:test@/unsubscribed"
+type UserInputs struct {
+	command  string
+	users    int
+	minEmail int
+	maxEmail int
+}
 
-func checkErr(err error){
+func checkErr(err error) {
+	// check error from database if any
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 }
 
-func main(){
-	/*TODO:
-		- Change functionality to not use be hosted
-		  on a server
-		- Use cli-arguments to update different the database
+// Grabs the command line argments
+// and return a Inputs object containinf the
+// values. And a nil if no cli atgements were
+// given
+func getCommandLineInputs() UserInputs {
+	cmdPtr := flag.String("cmd", "", "Possible commands: 'repopulate', 'add', 'del'")
+	userPtr := flag.Int("users", 1, "Possible inputs: integers > 0")
+	minEmailPtr := flag.Int("minEmail", 1, "Possible inputs: integer > 0")
+	maxEmailPtr := flag.Int("maxEmail", 2, "Possible inputs: integer > minEmail")
+	flag.Parse()
+	return UserInputs{*cmdPtr, *userPtr, *minEmailPtr, *maxEmailPtr}
+}
+
+// Given the user inputs, clear existing data and repopulate
+// the table with new randomly generated data
+func handleRepopulate(cmd string, minEmails, maxEmails int) {
+
+}
+
+func main() {
+	userInputs := getCommandLineInputs()
+	if userInputs.command == "" {
+		fmt.Fprintf(os.Stderr, "Error: cmd cannot be empty.\n")
+		flag.PrintDefaults()
+	}
+	/*
+		// command line inputs
+		clInputs := os.Args[1:]
+		if len(clInputs) == 0 {
+			fmt.Println(instructions)
+			return
+		}
+
+		// number of user ids
+		numUsers, err := strconv.Atoi(clInputs[0])
+		checkErr(err)
+
+		// minimum and maximum number of emails per user_id
+		minEmails, err := strconv.Atoi(clInputs[1])
+		checkErr(err)
+
+		maxEmails, err := strconv.Atoi(clInputs[2])
+		checkErr(err)
+
+		// log into db and clear table
+		update := databaseAccessObj.New("bloom:test@/unsubscribed")
+		fmt.Println("Clearing current db...")
+		update.Clear()
+		fmt.Println("Done.")
+
+		// benchmarking for creating random data
+		fmt.Printf("Generating test data (%d users, %d min addrs,  %d max addrs)...\n", numUsers, minEmails, maxEmails)
+		start := time.Now()
+		data := bloomDataGenerator.GenData(numUsers, minEmails, maxEmails)
+		elapsed := time.Since(start)
+		fmt.Printf("Done. Took %s\n", elapsed)
+
+		// benchmarking for insert random data into one table in the db
+		fmt.Println("Inserting test data into db...")
+		start = time.Now()
+		update.InsertDataSet(data)
+		elapsed = time.Since(start)
+		fmt.Printf("Done. Took %s\n\n", elapsed)
+
 	*/
-	http.HandleFunc("/insertUserEmail", insertUserEmail)
-	err := http.ListenAndServe(":9090", nil)
-	checkErr(err)
+
+	/*
+		fmt.Println("Clearing current db...")
+		update.Clear()
+		fmt.Println("Done.\n")
+
+		// benchmarking for inserting random data into multiple shards
+		fmt.Println("Inserting test data into db shards...")
+		start = time.Now()
+		update.InsertDataShards(data)
+		elapsed = time.Since(start)
+		fmt.Printf("Done. Took %s\n", elapsed)
+	*/
+
+	//	update.CloseConnection()
+
 }
-
-func insertUserEmail(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Inserting new data...")
-	update := databaseAccessObj.New(dsn)
-	var data map[int][]string
-	if r.Body == nil {
-		http.Error(w, "No data received", 400)
-		return
-	}
-
-	err := json.NewDecoder(r.Body).Decode(&data)
-	if err != nil{
-		http.Error(w, err.Error(), 400)
-		return
-	}
-	update.InsertDataSet(data)
-	fmt.Println("Done .")
-}
-

@@ -9,6 +9,7 @@ import (
 
 const bitArraySize = 10000
 const numberOfHashFunction = 5
+const databaseSize = 15
 
 // BloomFilter struct holds the pointer to the bloomFilter object
 type BloomFilter struct {
@@ -21,9 +22,12 @@ func New() *BloomFilter {
 	return &BloomFilter{bloomFilter}
 }
 
-// UpdateBloomFilter is used when more unsubscribed emails have been added to the database
+// UpdateBloomFilter will be called if unsubscribed emails are added to the database
+// (unsubscribe emails), can be used for initially populating the bloom filter and
+// updating the bloom filter
 func (bf *BloomFilter) UpdateBloomFilter() {
-	var arrayOfUserIDEmail = getArrayOfUserIDEmail()
+	var arrayOfUserIDEmail []string
+	arrayOfUserIDEmail = getArrayOfUserIDEmail()
 	for i := range arrayOfUserIDEmail {
 		bf.bloomFilter.AddString(arrayOfUserIDEmail[i])
 	}
@@ -41,23 +45,26 @@ func (bf *BloomFilter) RepopulateBloomFilter() {
 	bf.bloomFilter = newBloomFilter.Copy()
 }
 
-// getArrayOfUserIDEmail retrieves all records in the database and returns an array
+// getArrayOfUserIDEmail retrieves all records in the database shards and returns an array
 // of strings in the form of userid_email
 func getArrayOfUserIDEmail() []string {
 	var arrayOfUserIDEmail []string
 	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
-	databaseResultMap := dao.SelectAll()
-	for key, value := range databaseResultMap {
-		for i := range value {
-			arrayOfUserIDEmail = append(arrayOfUserIDEmail, strconv.Itoa(int(key))+"_"+value[i])
+	// loops through all tables in the database
+	for j := 0; j < databaseSize; j++ {
+		databaseResultMap := dao.SelectTable(j)
+		for key, value := range databaseResultMap {
+			for i := range value {
+				arrayOfUserIDEmail = append(arrayOfUserIDEmail, strconv.Itoa(int(key))+"_"+value[i])
+			}
 		}
 	}
 	dao.CloseConnection()
 	return arrayOfUserIDEmail
 }
 
-//GetArrayOfUnsubscribedEmails given a list of strings will return a list of those
-//that exist in the bloom filter
+// GetArrayOfUnsubscribedEmails given a list of strings will return a list of those
+// that exist in the bloom filter
 func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(arrayOfEmails []string) []string {
 	var arrayOfUnsubscribedEmails []string
 	for i := range arrayOfEmails {

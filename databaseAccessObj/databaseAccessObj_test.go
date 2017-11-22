@@ -13,78 +13,84 @@ like so:
 package databaseAccessObj
 
 import (
+	"time"
+	"fmt"
 	"testing"
 	"github.com/stretchr/testify/assert"
-	"Inf191BloomFilter/src/bloomDataGenerator"
 )
 
 const dsn = "bloom:test@/unsubscribed"
 
+func TestMain(m *testing.M){
+	db := New(dsn)
+	db.Clear()
+	m.Run()
+	db.CloseConnection()
+}
+
 func TestConnection(t *testing.T){
-	update := New(dsn)
-	update.CloseConnection()
+	db := New(dsn)
+	db.CloseConnection()
 }
 
 func TestHasTable(t *testing.T){
-	update := New(dsn)
-	assert.True(t, update.hasTable("unsubscribed", "unsub_0"))
-	assert.False(t, update.hasTable("unsubscribed", "nothere"))
-	assert.False(t, update.hasTable("unsubscribed", "nothereeither"))
-	assert.False(t, update.hasTable("unsubscribed", "nope"))
-	update.CloseConnection()
-}
-
-func TestEnsureTable(t *testing.T){
-	update := New(dsn)
-	// Test ensure table on a table that does exist to make sure
-	// there's no bugs
-	assert.True(t, update.hasTable("unsubscribed", "unsub_0"))
-
-	// Delete these tables if they exist in the db
-	update.dropTable("unsub_99")
-	update.dropTable("unsub_100")
-
-	// Make sure that these table doesn't exist in the databse
-	assert.False(t, update.hasTable("unsubscribed", "unsub_1"))
-	assert.False(t, update.hasTable("unsubscribed", "unsub_2"))
-
-	// Run ensure table using the same inputs to create the tables
-	update.EnsureTable("unsub_99")
-	update.EnsureTable("unsub_100")
-
-	// double check to make sure that the tables are created
-	assert.True(t, update.hasTable("unsubscribed", "unsub_1"))
-	assert.True(t, update.hasTable("unsubscribed", "unsub_2"))
-
-	update.CloseConnection()
+	db := New(dsn)
+	assert.True(t, db.hasTable("unsubscribed", "unsub_0"))
+	assert.False(t, db.hasTable("unsubscribed", "nothere"))
+	assert.False(t, db.hasTable("unsubscribed", "nothereeither"))
+	assert.False(t, db.hasTable("unsubscribed", "nope"))
+	db.CloseConnection()
 }
 
 func TestInsertAndSelect(t *testing.T){
-	update := New(dsn)
-	data := bloomDataGenerator.GenData(1, 10, 20)
+	db := New(dsn)
+	testData := make(map[int][]string)
+	testData[0] = []string{"a","b","c"}
+	testData[16] = []string{"d","e","f","g"}
+	db.Insert(testData)
+	result := db.Select(testData)
+	assert.Equal(t, testData, result)
+	db.CloseConnection()
+}
 
-	// Make sure the table is empty
-	update.Clear()
+func TestSelectTable(t *testing.T){
+	db := New(dsn)
+	testData := make(map[int][]string)
+	testData[3] = []string{"h","i","j"}
+	testData[18] = []string{"k","l","m","n","o"}
+	testData[23] = []string{"p","q","r","s"}
+	testDataShard3 := make(map[int][]string)
+	testDataShard3[3] = testData[3]
+	testDataShard3[18] = testData[18]
+	testDataShard8 := make(map[int][]string)
+	testDataShard8[23] = testData[23]
+	db.Insert(testData)
+	result := db.SelectTable(3)
+	assert.Equal(t, testDataShard3, result)
+	result = db.SelectTable(8)
+	assert.Equal(t, testDataShard8, result)
+	db.CloseConnection()
+}
 
-	// Add data to db
-	update.InsertDataSet(data)
+func TestSelectByTimestamp(t *testing.T){
+	db := New(dsn)
+	testData := make(map[int][]string)
+	testData[6] = []string{"t","u","v","w"}
+	testData2 := make(map[int][]string)
+	testData2[6] = []string{"x","y","z"}
+	db.Insert(testData)
+	time.Sleep(time.Second)
+	ts := time.Now()
+	time.Sleep(time.Second)
+	db.Insert(testData2)
+	result := db.SelectByTimestamp(ts)
+	assert.Equal(t, testData2, result)
+	db.CloseConnection()
+}
 
-	retrieved := update.SelectAll()
-	expected_emails := make(map[string]bool)
-
-	for _, emails := range data{
-		for i := range emails{
-			expected_emails[emails[i]] = true
-		}
-	}
-
-	// Test if data generated is the same as ones
-	// retrieved from db
-	for _, emails := range retrieved {
-		for i := range emails{
-			if ! expected_emails[emails[i]]{
-				t.Error()
-			}
-		}
+func BenchmarkInsert(b *testing.B){
+	for i := 0; i < b.N; i++{
+		fmt.Println("bench")
 	}
 }
+
