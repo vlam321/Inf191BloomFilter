@@ -39,7 +39,9 @@ Note: localhost might not work. I'm currently trying to find a way to make it wo
 ## Test Data
 ### bloomDataGenerator
 Test Data can be generated using the bloomDataGenerator package. The function GenData will require 3 arguments: amount of users, and a minimum and maximum values to set the range for the number of email addresses to be generated.
-`data := bloomDataGenerator.GenData(5, 100, 1000)`
+```
+data := bloomDataGenerator.GenData(5, 100, 1000)
+```
 ### databaseAccessObj
 To populate database with these data, ensure that your database, call the InsertDataSet function and a map[int][]string as instance as argument.
 ```
@@ -50,10 +52,16 @@ There are also other useful functions in databaseAccessObj.go.
 ### updateDatabase
 Additionally, you can get your data store set up in command line using updateDatabase.go. There are a few ways to do it. You can run it directly, or use go install to create a executable. Either way should work fine as long as you provide the correct command. Here's a few examples on how to use it.
 #### Populating the database with tables
-`$ updateDatabase -cmd=mktbls`
+```
+$ updateDatabase -cmd=mktbls
+```
 Note: You can run the script without using 'go run' only after you did 'go install' to create the binary file. The command above would create 15 tables in the 'unsubscribed' database, so make sure you have that setup first. You should really start with an empty database (without any tables).
 #### Repopulating the database with values
-`$ go run updateDatabase.go -cmd=repopulate -numUser=10 -minEmail=1000 -maxEmail=10000`
+```
+$ go run updateDatabase.go -cmd=repopulate -numUser=10 -minEmail=1000 -maxEmail=10000
+```
 Note: You can use 'go run' to run the script, which will clear the current values in existing unsub tables and add new values in.
 #### Adding new values (without deleting existing data)
-`$ go run updateDatabase.go -cmd=add -numUser=2 -minEmail=100 -maxEmail=200`
+```
+$ go run updateDatabase.go -cmd=add -numUser=2 -minEmail=100 -maxEmail=200
+```
