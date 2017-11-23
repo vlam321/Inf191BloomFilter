@@ -31,7 +31,15 @@ func checkErr(err error) {
 // values. And a nil if no cli atgements were
 // given
 func getCommandLineInputs() UserInputs {
-	cmdPtr := flag.String("cmd", "", "Possible commands: 'repopulate', 'add', 'del', 'mktbls'")
+	cmdPtr := flag.String("cmd", "", `
+	Possible commands: 
+	mktbls: Create 15 tables named unsub 0 - 14 in unsubscribed
+		(no arguments needed) 
+	repopulate: Clear all current values in tables and repopulates it 
+		(can optionally specify number of users, mininum and maximum emails per user)
+	add: Create new dataset and add it to the database
+		(can optionally specify number of users, mininum and maximum emails per user)
+	`)
 	userPtr := flag.Int("numUser", 1, "Possible inputs: integers > 0")
 	minEmailPtr := flag.Int("minEmail", 1, "Possible inputs: integer > 0")
 	maxEmailPtr := flag.Int("maxEmail", 2, "Possible inputs: integer > minEmail")
@@ -56,16 +64,6 @@ func handleAdd(numUser, minEmail, maxEmail int) {
 	dao.CloseConnection()
 }
 
-func handleDel(numUser, minEmail, maxEmail int) {
-	dao := databaseAccessObj.New(dsn)
-	// change arguments
-	// use a int to determines how many rows to delete
-	// need dao to return a subset of random useremail pairs
-	// delete those from the db (may need a func in dao for that)
-	// return the ones deleted?
-	dao.CloseConnection()
-}
-
 func handleMkTbl() {
 	dao := databaseAccessObj.New(dsn)
 	for i := 0; i < 15; i++ {
@@ -80,22 +78,20 @@ func main() {
 	if userInputs.command == "" {
 		fmt.Fprintf(os.Stderr, "Error: cmd cannot be empty.\n")
 		flag.PrintDefaults()
-	}
-	switch userInputs.command {
-	case "mktbls":
-		handleMkTbl()
-		fmt.Println("Done. Created tables in unsubscribed.")
-	case "repopulate":
-		handleRepopulate(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
-		fmt.Printf("Done. \n")
-	case "add":
-		handleAdd(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
-		fmt.Printf("Done. \n")
-	case "del":
-		handleDel(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
-		fmt.Printf("Done. \n")
-	default:
-		fmt.Fprintf(os.Stderr, "Error: invalid command.\n")
-		flag.PrintDefaults()
+	} else {
+		switch userInputs.command {
+		case "mktbls":
+			handleMkTbl()
+			fmt.Println("Done. Created tables in unsubscribed.")
+		case "repopulate":
+			handleRepopulate(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
+			fmt.Printf("Done. \n")
+		case "add":
+			handleAdd(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
+			fmt.Printf("Done. \n")
+		default:
+			fmt.Fprintf(os.Stderr, "Error: invalid command.\n")
+			flag.PrintDefaults()
+		}
 	}
 }
