@@ -69,7 +69,7 @@ func (update *Update) CloseConnection() {
 
 func (update *Update) MkTbl(tablename, schema string) {
 	db := update.db
-	_, err := db.Exec("CREATE TABLE " + tablename + schema + ";")
+	_, err := db.Exec("CREATE TABLE IF NOT EXISTS " + tablename + schema + ";")
 	checkErr(err)
 }
 

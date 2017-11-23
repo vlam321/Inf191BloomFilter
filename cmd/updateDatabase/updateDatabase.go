@@ -1,15 +1,12 @@
 package main // probably need to convert this to a proper go test
 
 import (
-	// "Inf191BloomFilter/bloomDataGenerator"
-	// "Inf191BloomFilter/databaseAccessObj"
 	"Inf191BloomFilter/bloomDataGenerator"
 	"Inf191BloomFilter/databaseAccessObj"
 	"flag"
 	"fmt"
 	"os"
 	"strconv"
-	// "time"
 )
 
 type UserInputs struct {
@@ -17,7 +14,6 @@ type UserInputs struct {
 	numUser  int
 	minEmail int
 	maxEmail int
-	numTbl   int
 }
 
 const dsn = "bloom:test@/unsubscribed"
@@ -35,13 +31,12 @@ func checkErr(err error) {
 // values. And a nil if no cli atgements were
 // given
 func getCommandLineInputs() UserInputs {
-	cmdPtr := flag.String("cmd", "", "Possible commands: 'repopulate', 'add', 'del', 'mktbl'")
+	cmdPtr := flag.String("cmd", "", "Possible commands: 'repopulate', 'add', 'del', 'mktbls'")
 	userPtr := flag.Int("numUser", 1, "Possible inputs: integers > 0")
 	minEmailPtr := flag.Int("minEmail", 1, "Possible inputs: integer > 0")
 	maxEmailPtr := flag.Int("maxEmail", 2, "Possible inputs: integer > minEmail")
-	numTblPtr := flag.Int("numTable", 1, "Possible inputs: integer > 0")
 	flag.Parse()
-	return UserInputs{*cmdPtr, *userPtr, *minEmailPtr, *maxEmailPtr, *numTblPtr}
+	return UserInputs{*cmdPtr, *userPtr, *minEmailPtr, *maxEmailPtr}
 }
 
 // Given the user inputs, clear existing data and repopulate
@@ -71,9 +66,9 @@ func handleDel(numUser, minEmail, maxEmail int) {
 	dao.CloseConnection()
 }
 
-func handleMkTbl(numTable int) {
+func handleMkTbl() {
 	dao := databaseAccessObj.New(dsn)
-	for i := 0; i < numTable; i++ {
+	for i := 0; i < 15; i++ {
 		tablename := "unsub_" + strconv.Itoa(i)
 		dao.MkTbl(tablename, schema)
 	}
@@ -87,9 +82,9 @@ func main() {
 		flag.PrintDefaults()
 	}
 	switch userInputs.command {
-	case "mktbl":
-		handleMkTbl(userInputs.numTbl)
-		fmt.Printf("Done. Created %d tables in unsubscribed.\n", userInputs.numTbl)
+	case "mktbls":
+		handleMkTbl()
+		fmt.Println("Done. Created tables in unsubscribed.")
 	case "repopulate":
 		handleRepopulate(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
 		fmt.Printf("Done. \n")
@@ -99,5 +94,8 @@ func main() {
 	case "del":
 		handleDel(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
 		fmt.Printf("Done. \n")
+	default:
+		fmt.Fprintf(os.Stderr, "Error: invalid command.\n")
+		flag.PrintDefaults()
 	}
 }

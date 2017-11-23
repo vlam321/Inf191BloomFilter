@@ -41,6 +41,7 @@ func checkErr(err error) {
 }
 
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	var buff []byte
 	var payload Payload
 
@@ -52,23 +53,14 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(buff, &payload)
 	checkErr(err)
 
-	fmt.Println(payload)
-
 	bf := bloomManager.New()
 	emails := bf.GetArrayOfUnsubscribedEmails(payload.Emails)
 	filteredEmails := Result{emails}
-	// buff2 := new(bytes.Buffer)
-	// data, err := json.Marshal(filteredEmails)
-	// checkErr(err)
 
 	js, err := json.Marshal(filteredEmails)
 	checkErr(err)
 
-	fmt.Println(js)
 	w.Write(js)
-	//return the result in whatever format use http.response
-	//look into resturing body
-	//encode to type.buffer
 }
 
 func main() {
