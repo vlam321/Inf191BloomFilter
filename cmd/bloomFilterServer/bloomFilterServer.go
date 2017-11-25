@@ -19,30 +19,32 @@ import (
 	"net/http"
 )
 
-//struct that takes an int and a list of emails
-type Payload struct {
-	UserId int
-	Emails []string
-}
+//Global variable 
+//The bloom filter for this server
+var bf := bloomManager.New()
 
-type Result struct {
-	Trues []string
-}
 
 //handleUpdate will update the respective bloomFilter
 func handleUpdate(r http.ResponseWriter, req *http.Request) {
-	//	Use UpdateBloomFilter() here
+	bf.UpdateBloomFilter()
+
 }
 
+//checkErr checks fro errors in the decoded text and encoded text... 
 func checkErr(err error) {
 	if err != nil {
 		panic(err.Error())
 	}
 }
 
+
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	var buff []byte
 	var payload Payload
+	//Result struct made to carry the result of unsuscribed emails 
+	type Result struct {
+	Trues []string
+	}
 
 	err := json.NewDecoder(r.Body).Decode(&buff)
 	if err != nil {
@@ -57,21 +59,17 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	bf := bloomManager.New()
 	emails := bf.GetArrayOfUnsubscribedEmails(payload.Emails)
 	filteredEmails := Result{emails}
-	// buff2 := new(bytes.Buffer)
-	// data, err := json.Marshal(filteredEmails)
-	// checkErr(err)
 
 	js, err := json.Marshal(filteredEmails)
 	checkErr(err)
 
 	fmt.Println(js)
 	w.Write(js)
-	//return the result in whatever format use http.response
-	//look into resturing body
-	//encode to type.buffer
 }
 
 func main() {
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
+	http.HandleFunc("/update", handleUpdate)
+	
 	http.ListenAndServe(":9090", nil)
 }

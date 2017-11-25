@@ -16,7 +16,10 @@ import (
 )
 
 const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
-
+type Payload struct {
+	UserId int
+	Emails []string
+}
 func TestUnsub(t *testing.T) {
 	// var payload Payload
 	var dataSum []string
@@ -65,16 +68,6 @@ func TestUnsub(t *testing.T) {
 	err = json.Unmarshal(body, &arr)
 	checkErr(err)
 	fmt.Println(arr.Trues)
-
-	// var buff2 []byte
-	// var payload2 Payload
-
-	// err2 := json.NewDecoder(res.Body).Decode(&buff2)
-	// checkErr(err2)
-	// err2 = json.Unmarshal(buff2, &payload2)
-	// checkErr(err2)
-
-	// fmt.Println(payload2)
 	}
 }
 
