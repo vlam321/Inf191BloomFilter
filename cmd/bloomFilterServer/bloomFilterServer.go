@@ -18,32 +18,38 @@ import (
 	"fmt"
 	"net/http"
 )
-
-//struct that takes an int and a list of emails
 type Payload struct {
 	UserId int
 	Emails []string
 }
 
-type Result struct {
-	Trues []string
-}
+//Global variable 
+//The bloom filter for this server
+var bf = bloomManager.New()
+
 
 //handleUpdate will update the respective bloomFilter
 func handleUpdate(r http.ResponseWriter, req *http.Request) {
-	//	Use UpdateBloomFilter() here
+	bf.UpdateBloomFilter()
+
 }
 
+//checkErr checks fro errors in the decoded text and encoded text... 
 func checkErr(err error) {
 	if err != nil {
 		panic(err.Error())
 	}
 }
 
+
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	var buff []byte
 	var payload Payload
+	//Result struct made to carry the result of unsuscribed emails 
+	type Result struct {
+	Trues []string
+	}
 
 	err := json.NewDecoder(r.Body).Decode(&buff)
 	if err != nil {
@@ -65,5 +71,7 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
+	http.HandleFunc("/update", handleUpdate)
+	
 	http.ListenAndServe(":9090", nil)
 }
