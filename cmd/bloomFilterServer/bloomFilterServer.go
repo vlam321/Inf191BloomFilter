@@ -17,40 +17,40 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 )
+
 type Payload struct {
 	UserId int
 	Emails []string
 }
 
-//Global variable 
+//Global variable
 //The bloom filter for this server
 var bf = bloomManager.New()
 
-
 //handleUpdate will update the respective bloomFilter
-func handleUpdate(r http.ResponseWriter, req *http.Request) {
+func handleUpdate(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bf.UpdateBloomFilter()
 
 }
 
-//checkErr checks fro errors in the decoded text and encoded text... 
+//checkErr checks fro errors in the decoded text and encoded text...
 func checkErr(err error) {
 	if err != nil {
 		panic(err.Error())
 	}
 }
 
-
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	var buff []byte
 	var payload Payload
-	//Result struct made to carry the result of unsuscribed emails 
+	//Result struct made to carry the result of unsuscribed emails
 	type Result struct {
-	Trues []string
+		Trues []string
 	}
-
 	err := json.NewDecoder(r.Body).Decode(&buff)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
@@ -59,8 +59,12 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(buff, &payload)
 	checkErr(err)
 
-	bf := bloomManager.New()
-	emails := bf.GetArrayOfUnsubscribedEmails(payload.Emails)
+	var emailInputs []string
+	for i := range payload.Emails {
+		emailInputs = append(emailInputs, strconv.Itoa(payload.UserId)+"_"+payload.Emails[i])
+	}
+
+	emails := bf.GetArrayOfUnsubscribedEmails(emailInputs)
 	filteredEmails := Result{emails}
 
 	js, err := json.Marshal(filteredEmails)
@@ -72,6 +76,6 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.HandleFunc("/update", handleUpdate)
-	
+
 	http.ListenAndServe(":9090", nil)
 }

@@ -10,6 +10,7 @@ import (
 	"Inf191BloomFilter/databaseAccessObj"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -17,7 +18,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const dsn = "bloom:test@/unsubscribed"
 const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
+const updateEndpoint = "http://localhost:9090/update"
 
 type Payload struct {
 	UserId int
@@ -35,22 +38,24 @@ type Result struct {
 }
 
 func TestUnsub(t *testing.T) {
-	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
+	dao := databaseAccessObj.New(dsn)
+	// Clear out values in table
+	dao.Clear()
+
 	var dataSum []string
 	buff := new(bytes.Buffer)
 	var payload Payload
 
 	// Generate random id_email pairs (positives) and save it in a var
-	inDB := bloomDataGenerator.GenData(1, 100, 200)
+	// Increasing these values may produce false positives
+	inDB := bloomDataGenerator.GenData(1, 10, 20)
 
 	// Insert new data in the db
 	dao.Insert(inDB)
 
 	// Call BF server to update the bit array
-	/* BLOCKED
-	res, err := http.Get(update_bit_array_endpoint)
+	_, err := http.Get(updateEndpoint)
 	checkErr(err)
-	*/
 
 	// Generate more raandom id_email pairs (negatives) and save it ina var
 	notInDB := bloomDataGenerator.GenData(1, 50, 100)
@@ -60,6 +65,7 @@ func TestUnsub(t *testing.T) {
 		dataSum = append(emails, notInDB[userid]...)
 	}
 
+	fmt.Println(len(dataSum))
 	// Put values into payload to be sent to the server later
 	payload = Payload{0, dataSum}
 
@@ -74,83 +80,75 @@ func TestUnsub(t *testing.T) {
 	// Request for members that exist in DB
 	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
 
-	var deres []int8
 	var arr Result
 
 	// Read the result
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 
-	// decode the body to []int8 to be unmarshaled
-	err = json.NewDecoder(res.Body).Decode(&deres)
-
 	// converts the decoded result back to a Result struct
 	err = json.Unmarshal(body, &arr)
 	checkErr(err)
 
+	fmt.Printf("%d == %d\n", len(arr.Trues), len(inDB[0]))
 	// checks that only values in DB are returned
-	/* BLOCKED
 	assert.True(t, len(arr.Trues) == len(inDB[0]))
-	*/
 }
 
 func TestNewUnsubscribes(t *testing.T) {
-	/*
-		1. gen rand data, store it in true dataset var and insert into db
-		2. run data against BF and make sure returns empty slice
-		3. insert data into db using doa
-		4. run request for updating BF bit array
-		5. rerun data again BF and make sure len(res) == len(data)
-	*/
+	dao := databaseAccessObj.New(dsn)
+	// Clear values in tables for clean test
+	dao.Clear()
+
 	buff := new(bytes.Buffer)
-	dataSet := bloomDataGenerator.GenData(1, 100, 200)
+
+	// Increasing these values may produce false positives
+	dataSet := bloomDataGenerator.GenData(1, 10, 20)
 	payload := Payload{0, dataSet[0]}
-	jPayload, err := json.Marshal(payload)
-	err = json.NewEncoder(buff).Encode(jPayload)
+
+	data, err := json.Marshal(payload)
 	checkErr(err)
+
+	err = json.NewEncoder(buff).Encode(data)
+	checkErr(err)
+
 	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
 
-	var deres []int8
 	var arr Result
+
 	// Read the result
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
-
-	// decode the body to []int8 to be unmarshaled
-	err = json.NewDecoder(res.Body).Decode(&deres)
+	checkErr(err)
 
 	// converts the decoded result back to a Result struct
 	err = json.Unmarshal(body, &arr)
 	checkErr(err)
 
+	fmt.Printf("%d != %d\n", len(arr.Trues), len(dataSet[0]))
 	assert.True(t, len(arr.Trues) == 0)
 
 	// Insert the true values into the database
-	doa := databaseAccessObj.New(dsn)
-	doa.Insert(dataSum)
+	dao.Insert(dataSet)
 
 	// Update the bloom filter bit array
-	/* BLOCKED
-	_, err := http.Get(update_bit_array_endpoint)
+	_, err = http.Get(updateEndpoint)
 	checkErr(err)
-	*/
+	err = json.NewEncoder(buff).Encode(data)
+	checkErr(err)
 
 	res, _ = http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
 
-	defer res.Body.Close()
 	body, err = ioutil.ReadAll(res.Body)
 	checkErr(err)
 
-	// decode the body to []int8 to be unmarshaled
-	err = json.NewDecoder(res.Body).Decode(&deres)
-	checkErr(err)
-
+	var arr2 Result
 	// converts the decoded result back to a Result struct
-	err = json.Unmarshal(body, &arr)
+	err = json.Unmarshal(body, &arr2)
 	checkErr(err)
 
 	// Check again to see if bit array is updated
-	/* BLOCKED
-	assert.True(t, len(arr.Trues) == len(dataSet[0]))
-	*/
+	fmt.Printf("%d == %d\n", len(arr2.Trues), len(dataSet[0]))
+	assert.True(t, len(arr2.Trues) == len(dataSet[0]))
+
 }
