@@ -18,10 +18,14 @@ import (
 	"fmt"
 	"net/http"
 )
+type Payload struct {
+	UserId int
+	Emails []string
+}
 
 //Global variable 
 //The bloom filter for this server
-var bf := bloomManager.New()
+var bf = bloomManager.New()
 
 
 //handleUpdate will update the respective bloomFilter

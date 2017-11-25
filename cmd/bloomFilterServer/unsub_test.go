@@ -16,10 +16,7 @@ import (
 )
 
 const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
-type Payload struct {
-	UserId int
-	Emails []string
-}
+
 func TestUnsub(t *testing.T) {
 	// var payload Payload
 	var dataSum []string
