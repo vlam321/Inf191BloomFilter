@@ -7,8 +7,8 @@ import (
 	"github.com/willf/bloom"
 )
 
-const bitArraySize = 10000
-const numberOfHashFunction = 5
+const bitArraySize = 1000000
+const numberOfHashFunction = 7
 const databaseSize = 15
 
 // BloomFilter struct holds the pointer to the bloomFilter object
