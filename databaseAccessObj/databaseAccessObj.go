@@ -73,6 +73,27 @@ func (update *Update) MkTbl(tablename, schema string) {
 	checkErr(err)
 }
 
+func (update *Update) SelectRandSubset(tblNum, size int) map[int][]string {
+	db := update.db
+	result := make(map[int][]string)
+
+	stmt, err := db.Prepare("SELECT user_id, email FROM unsub_" + strconv.Itoa(tblNum) + " ORDER BY RAND() LIMIT ?;")
+	checkErr(err)
+
+	rows, err := stmt.Query(strconv.Itoa(size))
+	checkErr(err)
+
+	defer rows.Close()
+	var user_id int
+	var email string
+	for rows.Next() {
+		err = rows.Scan(&user_id, &email)
+		checkErr(err)
+		result[user_id] = append(result[user_id], email)
+	}
+	return result
+}
+
 func (update *Update) Select(dataSet map[int][]string) map[int][]string {
 	// Return items that exist both in input dataSet and database
 	db := update.db
@@ -92,7 +113,7 @@ func (update *Update) Select(dataSet map[int][]string) map[int][]string {
 			continue
 		}
 		checkErr(err)
-		defer rows.Close()
+
 		for rows.Next() {
 			var user_id int
 			var email string
@@ -159,10 +180,12 @@ func (update *Update) Insert(dataSet map[int][]string) {
 		tableName := "unsub_" + strconv.Itoa(tabNum)
 		sqlStr := "INSERT INTO " + tableName + "(user_id, email, ts) VALUES "
 		var vals []interface{}
+		counter := 0
 		for p := range pairs {
 			for e := range pairs[p].emails {
 				sqlStr += "(?, ?, CURRENT_TIMESTAMP), "
 				vals = append(vals, pairs[p].id, pairs[p].emails[e])
+				counter += 1
 			}
 		}
 		sqlStr = sqlStr[0 : len(sqlStr)-2]

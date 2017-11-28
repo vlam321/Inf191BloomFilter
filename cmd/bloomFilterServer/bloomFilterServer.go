@@ -13,6 +13,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 )
 
 type payload struct {
@@ -24,35 +26,31 @@ type payload struct {
 //The bloom filter for this server
 var bf = bloomManager.New()
 
-
 //handleUpdate will update the respective bloomFilter
-//server will keep track of when the last updated time is. to call 
-//update every _ time. 
-// func handleUpdate(r http.ResponseWriter, req *http.Request) {
-// 	if lastUpdate.Sub(time.Now()).Seconds == time.Minute{
+//server will keep track of when the last updated time is. to call
+//update every _ time.
+func handleUpdate(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
+	bf.RepopulateBloomFilter()
+}
 
-// 	}
-// 	bf.UpdateBloomFilter()
-
-// }
-
-//checkErr checks fro errors in the decoded text and encoded text... 
+//checkErr checks fro errors in the decoded text and encoded text...
 func checkErr(err error) {
 	if err != nil {
 		panic(err.Error())
 	}
 }
 
-//handleFilterUnsubscripe handles when the client requests to recieve 
-//those emails that are unsubscribed therefore, IN the database. 
+//handleFilterUnsubscripe handles when the client requests to recieve
+//those emails that are unsubscribed therefore, IN the database.
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
-	
+	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	var buff []byte
 	var payload payload
 
-	//Result struct made to carry the result of unsuscribed emails 
+	//Result struct made to carry the result of unsuscribed emails
 	type Result struct {
-	Trues []string
+		Trues []string
 	}
 
 	//decode byets from request body
@@ -65,19 +63,21 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		// http.Error(w, err.Error(), 400)
 		// return
 	}
-	
+
 	// converts the decoded result to a payload struct
 	err = json.Unmarshal(buff, &payload)
 	checkErr(err)
+	var emailInputs []string
+	for i := range payload.Emails {
+		emailInputs = append(emailInputs, strconv.Itoa(payload.UserId)+"_"+payload.Emails[i])
+	}
 
-	fmt.Println(payload)
-
-	//uses bloomManager to get the result of unsubscribed emails 
-	//puts them in struct, result 
-	emails := bf.GetArrayOfUnsubscribedEmails(payload.Emails)
+	//uses bloomManager to get the result of unsubscribed emails
+	//puts them in struct, result
+	emails := bf.GetArrayOfUnsubscribedEmails(emailInputs)
 	filteredEmails := Result{emails}
 
-	//convert result to json 
+	//convert result to json
 	js, err := json.Marshal(filteredEmails)
 	checkErr(err)
 
@@ -87,30 +87,28 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-
-func timeManager(){
-	ticker := time.NewTicker(time.Second * 2)	
+func timeManager() {
+	ticker := time.NewTicker(time.Second * 2)
 	go func() {
-        	for t := range ticker.C {
-				//Call update bloom filter
-				bf.UpdateBloomFilter()
-            	fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
-	
-       		}
+		for t := range ticker.C {
+			//Call update bloom filter
+			bf.UpdateBloomFilter()
+			fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
+
+		}
 	}()
-	//Figure out how to run without sleep? 
+	//Figure out how to run without sleep?
 	//use go forever? an option
 	time.Sleep(time.Second * 10)
-    	ticker.Stop()
-    	fmt.Println("Ticker stopped")
+	ticker.Stop()
+	fmt.Println("Ticker stopped")
 }
 
-
 func main() {
-   
+
 	timeManager()
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
-	// http.HandleFunc("/update", handleUpdate)
-	
+	http.HandleFunc("/update", handleUpdate)
+
 	http.ListenAndServe(":9090", nil)
 }

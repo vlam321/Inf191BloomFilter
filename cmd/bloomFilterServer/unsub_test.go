@@ -3,7 +3,7 @@ client. The client is responsible for makine http requests
 to the dbServer and bloomFilterServer
 */
 
-package bloomFilterServer
+package Inf191BloomFilter
 
 import (
 	"Inf191BloomFilter/bloomDataGenerator"
@@ -48,7 +48,7 @@ func TestUnsub(t *testing.T) {
 
 	// Generate random id_email pairs (positives) and save it in a var
 	// Increasing these values may produce false positives
-	inDB := bloomDataGenerator.GenData(1, 10, 20)
+	inDB := bloomDataGenerator.GenData(1, 1000, 2000)
 
 	// Insert new data in the db
 	dao.Insert(inDB)
@@ -58,14 +58,14 @@ func TestUnsub(t *testing.T) {
 	checkErr(err)
 
 	// Generate more raandom id_email pairs (negatives) and save it ina var
-	notInDB := bloomDataGenerator.GenData(1, 50, 100)
+	notInDB := bloomDataGenerator.GenData(1, 1000, 2000)
 
 	// Concatenate the two slices
 	for userid, emails := range inDB {
 		dataSum = append(emails, notInDB[userid]...)
 	}
 
-	fmt.Println(len(dataSum))
+	fmt.Println("Total ID:Email pairs inserted: ", len(dataSum))
 	// Put values into payload to be sent to the server later
 	payload = Payload{0, dataSum}
 
@@ -90,7 +90,7 @@ func TestUnsub(t *testing.T) {
 	err = json.Unmarshal(body, &arr)
 	checkErr(err)
 
-	fmt.Printf("%d == %d\n", len(arr.Trues), len(inDB[0]))
+	fmt.Printf("%d ID:Email pairs returned == %d ID:Email pairs expected\n", len(arr.Trues), len(inDB[0]))
 	// checks that only values in DB are returned
 	assert.True(t, len(arr.Trues) == len(inDB[0]))
 }
@@ -103,7 +103,7 @@ func TestNewUnsubscribes(t *testing.T) {
 	buff := new(bytes.Buffer)
 
 	// Increasing these values may produce false positives
-	dataSet := bloomDataGenerator.GenData(1, 10, 20)
+	dataSet := bloomDataGenerator.GenData(1, 1000, 2000)
 	payload := Payload{0, dataSet[0]}
 
 	data, err := json.Marshal(payload)
@@ -125,7 +125,7 @@ func TestNewUnsubscribes(t *testing.T) {
 	err = json.Unmarshal(body, &arr)
 	checkErr(err)
 
-	fmt.Printf("%d != %d\n", len(arr.Trues), len(dataSet[0]))
+	fmt.Printf("%d ID:Email pairs returned == 0 ID:Email pairs expected\n", len(arr.Trues))
 	assert.True(t, len(arr.Trues) == 0)
 
 	// Insert the true values into the database
@@ -148,7 +148,7 @@ func TestNewUnsubscribes(t *testing.T) {
 	checkErr(err)
 
 	// Check again to see if bit array is updated
-	fmt.Printf("%d == %d\n", len(arr2.Trues), len(dataSet[0]))
+	fmt.Printf("%d ID:Email pairs returned == %d ID:Email pairs expected\n", len(arr2.Trues), len(dataSet[0]))
 	assert.True(t, len(arr2.Trues) == len(dataSet[0]))
 }
 
@@ -166,8 +166,8 @@ func TestResubscribed(t *testing.T) {
 	*/
 
 	var allData []string
-	dataSet := bloomDataGenerator.GenData(1, 10, 20)
-	extra := bloomDataGenerator.GenData(1, 10, 20)
+	dataSet := bloomDataGenerator.GenData(1, 1000, 2000)
+	extra := bloomDataGenerator.GenData(1, 1000, 2000)
 
 	allData = append(allData, dataSet[0]...)
 	allData = append(allData, extra[0]...)
@@ -207,7 +207,7 @@ func TestResubscribed(t *testing.T) {
 	err = json.Unmarshal(body, &arr)
 	checkErr(err)
 
-	fmt.Printf("%d != %d", len(dataSum[0]), len(arr.Trues))
+	fmt.Printf("%d total ID:Email pairs != %d ID:Email pairs returned\n", len(dataSum[0]), len(arr.Trues))
 	assert.False(t, len(dataSum[0]) == len(arr.Trues))
 
 	// Grab some of these data from the database
