@@ -22,6 +22,7 @@ func TestUpdateBloomFilter(t *testing.T) {
 	assert.Equal(t, true, bf.bloomFilter.TestString("0_test2@uci.edu"))
 	assert.Equal(t, false, bf.bloomFilter.TestString("0_test0@gmail.com"))
 	assert.Equal(t, true, bf.bloomFilter.TestString("0_test3@uci.edu"))
+	dao.Delete(databaseTestMap)
 	dao.CloseConnection()
 }
 
@@ -41,6 +42,7 @@ func TestUpdateBloomFilter2(t *testing.T) {
 	bf.UpdateBloomFilter()
 	assert.Equal(t, true, bf.bloomFilter.TestString("0_catlover@uci.edu"))
 	assert.Equal(t, true, bf.bloomFilter.TestString("0_snowcone3@uci.edu"))
+	dao.Delete(databaseTestMap)
 	dao.CloseConnection()
 }
 
@@ -87,7 +89,8 @@ func TestGetArrayOfUnsubscribedEmails(t *testing.T) {
 	var emailToCheck []string
 	emailToCheck = bf.GetArrayOfUnsubscribedEmails(arrayOfEmails)
 	assert.Equal(t, 2, len(emailToCheck))
-	assert.Equal(t, "0_friedchicken@gmail.com", emailToCheck[0])
-	assert.Equal(t, "0_chocolatebar@yahoo.com", emailToCheck[1])
+	assert.Equal(t, "0_friedchicken@gmail.com", emailToCheck[1])
+	assert.Equal(t, "0_chocolatebar@yahoo.com", emailToCheck[0])
+	dao.Delete(databaseTestMap)
 	dao.CloseConnection()
 }
