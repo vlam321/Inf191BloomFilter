@@ -17,7 +17,8 @@ type UserInputs struct {
 }
 
 const dsn = "bloom:test@/unsubscribed"
-const schema = `(user_id int(11), email varchar(255), ts timestamp default current_timestamp, primary key (user_id, email));`
+const unsub_schema = `(user_id int(11), email varchar(255), ts timestamp default current_timestamp, primary key (user_id, email));`
+const test_result_schema = `(result_type varchar(30) NOT NULL, x_axis float NOT NULL, y_axis float NOT NULL );`
 
 func checkErr(err error) {
 	// check error from database if any
@@ -68,8 +69,9 @@ func handleMkTbl() {
 	dao := databaseAccessObj.New(dsn)
 	for i := 0; i < 15; i++ {
 		tablename := "unsub_" + strconv.Itoa(i)
-		dao.MkTbl(tablename, schema)
+		dao.MkTbl(tablename, unsub_schema)
 	}
+	dao.MkTbl("test_results", test_result_schema)
 	dao.CloseConnection()
 }
 

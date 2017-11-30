@@ -30,6 +30,12 @@ type SqlStrVal struct {
 	val    []interface{}
 }
 
+type GraphValue struct {
+	graphType string
+	x         float32
+	y         float32
+}
+
 func modId(userid int) int {
 	// mod user_id by 15
 	return int(math.Mod(float64(userid), 15.0))
@@ -163,7 +169,7 @@ func (update *Update) Tselect(dataSet map[int][]string) map[int][]string {
 				continue
 			}
 			checkErr(err)
-
+			defer rows.Close()
 			for rows.Next() {
 				var user_id int
 				var email string
@@ -287,6 +293,38 @@ func (update *Update) Tinsert(dataSet map[int][]string) {
 		_, err = stmt.Exec(sqlStrings[i].val...)
 		checkErr(err)
 	}
+}
+
+func (update *Update) LogTestResult(resultType string, x, y float32) {
+	db := update.db
+	sqlStr := "INSERT INTO test_results (result_type, x_axis, y_axis) VALUES (?, ?, ?)"
+	stmt, err := db.Prepare(sqlStr)
+	checkErr(err)
+	_, err = stmt.Exec(resultType, x, y)
+	checkErr(err)
+}
+
+func (update *Update) SelectTestResults() []GraphValue {
+	db := update.db
+	sqlStr := "SELECT result_type, x_axis, y_axis FROM test_results"
+	stmt, err := db.Prepare(sqlStr)
+	checkErr(err)
+	rows, err := stmt.Query()
+	checkErr(err)
+
+	var resultType string
+	var x float32
+	var y float32
+	result := make([]GraphValue, 0)
+
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&resultType, &x, &y)
+		checkErr(err)
+		result = append(result, GraphValue{resultType, x, y})
+	}
+	return result[0:len(result)]
+
 }
 
 func (update *Update) Delete(dataSet map[int][]string) {

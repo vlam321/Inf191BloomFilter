@@ -1,4 +1,4 @@
-package Inf191BloomFilter
+package main
 
 import (
 	"Inf191BloomFilter/bloomDataGenerator"
@@ -79,6 +79,7 @@ func benchmarkBitArrayUpdate(numValues int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		updateBitArray()
 	}
+	b.StopTimer()
 }
 
 func benchmarkUnsubMembership(numIDEmailPairs int, b *testing.B) {
@@ -103,3 +104,27 @@ func BenchmarkUnsubMembership4000(b *testing.B)  { benchmarkUnsubMembership(4000
 func BenchmarkUnsubMembership8000(b *testing.B)  { benchmarkUnsubMembership(8000, b) }
 func BenchmarkUnsubMembership16000(b *testing.B) { benchmarkUnsubMembership(16000, b) }
 func BenchmarkUnsubMembership32000(b *testing.B) { benchmarkUnsubMembership(32000, b) }
+
+func main() {
+	dao := databaseAccessObj.New(dsn)
+
+	res := testing.Benchmark(BenchmarkUpdate1000)
+	dao.LogTestResult("update_size_timeperop", float32(1000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUpdate2000)
+	dao.LogTestResult("update_size_timeperop", float32(2000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUpdate4000)
+	dao.LogTestResult("update_size_timeperop", float32(4000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUpdate8000)
+	dao.LogTestResult("update_size_timeperop", float32(8000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUpdate16000)
+	dao.LogTestResult("update_size_timeperop", float32(32000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUpdate32000)
+	dao.LogTestResult("update_size_timeperop", float32(64000), float32(res.NsPerOp()))
+
+	dao.CloseConnection()
+}
