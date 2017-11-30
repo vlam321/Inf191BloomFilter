@@ -5,6 +5,7 @@ import (
 	"Inf191BloomFilter/databaseAccessObj"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -80,6 +81,7 @@ func benchmarkBitArrayUpdate(numValues int, b *testing.B) {
 		updateBitArray()
 	}
 	b.StopTimer()
+	fmt.Printf("Ran bit array update benchmark with %d values (%d iterations).\n", numValues, b.N)
 }
 
 func benchmarkUnsubMembership(numIDEmailPairs int, b *testing.B) {
@@ -90,14 +92,17 @@ func benchmarkUnsubMembership(numIDEmailPairs int, b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		_ = getUnsub(dataset)
 	}
+	b.StopTimer()
+	fmt.Printf("Ran unsubscribed members filter benchmark with %d values (%d iterations).\n", numIDEmailPairs, b.N)
 }
 
-func BenchmarkUpdate1000(b *testing.B)           { benchmarkBitArrayUpdate(1000, b) }
-func BenchmarkUpdate2000(b *testing.B)           { benchmarkBitArrayUpdate(2000, b) }
-func BenchmarkUpdate4000(b *testing.B)           { benchmarkBitArrayUpdate(4000, b) }
-func BenchmarkUpdate8000(b *testing.B)           { benchmarkBitArrayUpdate(8000, b) }
-func BenchmarkUpdate16000(b *testing.B)          { benchmarkBitArrayUpdate(16000, b) }
-func BenchmarkUpdate32000(b *testing.B)          { benchmarkBitArrayUpdate(32000, b) }
+func BenchmarkUpdate1000(b *testing.B)  { benchmarkBitArrayUpdate(1000, b) }
+func BenchmarkUpdate2000(b *testing.B)  { benchmarkBitArrayUpdate(2000, b) }
+func BenchmarkUpdate4000(b *testing.B)  { benchmarkBitArrayUpdate(4000, b) }
+func BenchmarkUpdate8000(b *testing.B)  { benchmarkBitArrayUpdate(8000, b) }
+func BenchmarkUpdate16000(b *testing.B) { benchmarkBitArrayUpdate(16000, b) }
+func BenchmarkUpdate32000(b *testing.B) { benchmarkBitArrayUpdate(32000, b) }
+
 func BenchmarkUnsubMembership1000(b *testing.B)  { benchmarkUnsubMembership(1000, b) }
 func BenchmarkUnsubMembership2000(b *testing.B)  { benchmarkUnsubMembership(2000, b) }
 func BenchmarkUnsubMembership4000(b *testing.B)  { benchmarkUnsubMembership(4000, b) }
@@ -121,10 +126,28 @@ func main() {
 	dao.LogTestResult("update_size_timeperop", float32(8000), float32(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUpdate16000)
-	dao.LogTestResult("update_size_timeperop", float32(32000), float32(res.NsPerOp()))
+	dao.LogTestResult("update_size_timeperop", float32(16000), float32(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUpdate32000)
-	dao.LogTestResult("update_size_timeperop", float32(64000), float32(res.NsPerOp()))
+	dao.LogTestResult("update_size_timeperop", float32(32000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUnsubMembership1000)
+	dao.LogTestResult("unsubmembership_size_timeperop", float32(1000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUnsubMembership2000)
+	dao.LogTestResult("unsubmembership_size_timeperop", float32(2000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUnsubMembership4000)
+	dao.LogTestResult("unsubmembership_size_timeperop", float32(4000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUnsubMembership8000)
+	dao.LogTestResult("unsubmembership_size_timeperop", float32(8000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUnsubMembership16000)
+	dao.LogTestResult("unsubmembership_size_timeperop", float32(18000), float32(res.NsPerOp()))
+
+	res = testing.Benchmark(BenchmarkUnsubMembership32000)
+	dao.LogTestResult("unsubmembership_size_timeperop", float32(32000), float32(res.NsPerOp()))
 
 	dao.CloseConnection()
 }

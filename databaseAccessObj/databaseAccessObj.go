@@ -105,7 +105,7 @@ func (update *Update) SelectRandSubset(tblNum, size int) map[int][]string {
 	return result
 }
 
-func (update *Update) Select(dataSet map[int][]string) map[int][]string {
+func (update *Update) SelectLegacy(dataSet map[int][]string) map[int][]string {
 	// Return items that exist both in input dataSet and database
 	db := update.db
 	result := make(map[int][]string)
@@ -136,7 +136,7 @@ func (update *Update) Select(dataSet map[int][]string) map[int][]string {
 	return result
 }
 
-func (update *Update) Tselect(dataSet map[int][]string) map[int][]string {
+func (update *Update) Select(dataSet map[int][]string) map[int][]string {
 	// Return items that exist both in input dataSet and database
 	db := update.db
 	result := make(map[int][]string)
@@ -225,7 +225,7 @@ func (update *Update) SelectTable(tableNum int) map[int][]string {
 	return result
 }
 
-func (update *Update) Insert(dataSet map[int][]string) {
+func (update *Update) InsertLegacy(dataSet map[int][]string) {
 	// Takes (int, string[])map of data and inserts
 	// listed items into database
 	db := update.db
@@ -253,7 +253,7 @@ func (update *Update) Insert(dataSet map[int][]string) {
 	}
 }
 
-func (update *Update) Tinsert(dataSet map[int][]string) {
+func (update *Update) Insert(dataSet map[int][]string) {
 	// Takes (int, string[])map of data and inserts
 	// listed items into database
 	db := update.db
