@@ -13,9 +13,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
-	"os"
 )
 
 type payload struct {
@@ -102,7 +102,7 @@ func timeManager() {
 	fmt.Println("Ticker stopped")
 }
 
-func setBloomFilter(bitArraySize, numHashFunc uint){
+func setBloomFilter(bitArraySize, numHashFunc uint) {
 	bf = bloomManager.New(bitArraySize, numHashFunc)
 }
 
