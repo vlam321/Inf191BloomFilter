@@ -25,6 +25,17 @@ type Pair struct {
 	emails []string
 }
 
+type SqlStrVal struct {
+	sqlStr string
+	val    []interface{}
+}
+
+type GraphValue struct {
+	graphType string
+	X         float32
+	Y         float32
+}
+
 func modId(userid int) int {
 	// mod user_id by 15
 	return int(math.Mod(float64(userid), 15.0))
@@ -94,7 +105,7 @@ func (update *Update) SelectRandSubset(tblNum, size int) map[int][]string {
 	return result
 }
 
-func (update *Update) Select(dataSet map[int][]string) map[int][]string {
+func (update *Update) SelectLegacy(dataSet map[int][]string) map[int][]string {
 	// Return items that exist both in input dataSet and database
 	db := update.db
 	result := make(map[int][]string)
@@ -120,6 +131,75 @@ func (update *Update) Select(dataSet map[int][]string) map[int][]string {
 			err = rows.Scan(&user_id, &email)
 			checkErr(err)
 			result[user_id] = append(result[user_id], email)
+		}
+	}
+	return result
+}
+
+/*
+func (update *Update) SelectByShard(dataSet map[int][]string) map[int][]string{
+	//db := update.db
+	result := make(map[int][]string)
+	shardMap := make(map[int][]Pair)
+	for userid, emails := range dataSet {
+		shardMap[modId(userid)] = append(shardMap[modId(userid)], Pair{userid, emails})
+	}
+	int pairFlag = 0;
+	int emailFlag = 0;
+	int counter = 0;
+	for shardNum := range shardMap{
+		sqlStr := "SELECT user_id, email FROM unsub_" + shardNum + "WHERE "
+		for p := range pairs{
+			for e := range pairs[p].emails{
+				while(counter < 32000){
+					sqlStr += "(user_id = ? AND email = ?) OR "
+					counter += 2
+				}
+			}
+		}
+	}
+	return result
+}
+*/
+
+func (update *Update) Select(dataSet map[int][]string) map[int][]string {
+	// Return items that exist both in input dataSet and database
+	db := update.db
+	result := make(map[int][]string)
+	var sqlStrings []SqlStrVal
+	for userid, emails := range dataSet {
+		counter := 0
+		tableName := "unsub_" + strconv.Itoa(modId(userid))
+		sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = " + strconv.Itoa(userid) + " AND ("
+		var vals []interface{}
+		for i := range emails {
+			sqlStr += "email = ? OR "
+			vals = append(vals, dataSet[userid][i])
+			counter += 1
+			if counter >= 64000 {
+				sqlStrings = append(sqlStrings, SqlStrVal{sqlStr, vals[0:len(vals)]})
+				sqlStr = "SELECT user_id, email FROM " + tableName + " WHERE user_id = " + strconv.Itoa(userid) + " AND ("
+				vals = make([]interface{}, 0)
+				counter = 0
+			}
+		}
+		if len(vals) != 0 {
+			sqlStrings = append(sqlStrings, SqlStrVal{sqlStr, vals[0:len(vals)]})
+		}
+		for i := range sqlStrings {
+			rows, err := db.Query(sqlStrings[i].sqlStr[0:len(sqlStrings[i].sqlStr)-4]+")", sqlStrings[i].val[0:len(sqlStrings[i].val)]...)
+			if err == sql.ErrNoRows {
+				continue
+			}
+			checkErr(err)
+			defer rows.Close()
+			for rows.Next() {
+				var user_id int
+				var email string
+				err = rows.Scan(&user_id, &email)
+				checkErr(err)
+				result[user_id] = append(result[user_id], email)
+			}
 		}
 	}
 	return result
@@ -168,7 +248,7 @@ func (update *Update) SelectTable(tableNum int) map[int][]string {
 	return result
 }
 
-func (update *Update) Insert(dataSet map[int][]string) {
+func (update *Update) InsertLegacy(dataSet map[int][]string) {
 	// Takes (int, string[])map of data and inserts
 	// listed items into database
 	db := update.db
@@ -194,6 +274,80 @@ func (update *Update) Insert(dataSet map[int][]string) {
 		_, err = stmt.Exec(vals...)
 		checkErr(err)
 	}
+}
+
+func (update *Update) Insert(dataSet map[int][]string) {
+	// Takes (int, string[])map of data and inserts
+	// listed items into database
+	db := update.db
+	shardMap := make(map[int][]Pair)
+	for userid, emails := range dataSet {
+		shardMap[modId(userid)] = append(shardMap[modId(userid)], Pair{userid, emails})
+	}
+
+	var sqlStrings []SqlStrVal
+
+	for tabNum, pairs := range shardMap {
+		tableName := "unsub_" + strconv.Itoa(tabNum)
+		sqlStr := "INSERT INTO " + tableName + "(user_id, email, ts) VALUES "
+		var vals []interface{}
+		counter := 0
+		for p := range pairs {
+			for e := range pairs[p].emails {
+				sqlStr += "(?, ?, CURRENT_TIMESTAMP), "
+				vals = append(vals, pairs[p].id, pairs[p].emails[e])
+				counter += 1
+				if counter >= 32000 {
+					sqlStrings = append(sqlStrings, SqlStrVal{sqlStr, vals[0:len(vals)]})
+					sqlStr = "INSERT INTO " + tableName + "(user_id, email, ts) VALUES "
+					vals = make([]interface{}, 0)
+					counter = 0
+				}
+			}
+		}
+		if len(vals) != 0 {
+			sqlStrings = append(sqlStrings, SqlStrVal{sqlStr, vals[0:len(vals)]})
+		}
+
+	}
+	for i := range sqlStrings {
+		stmt, err := db.Prepare(sqlStrings[i].sqlStr[0 : len(sqlStrings[i].sqlStr)-2])
+		checkErr(err)
+		_, err = stmt.Exec(sqlStrings[i].val...)
+		checkErr(err)
+	}
+}
+
+func (update *Update) LogTestResult(resultType string, x, y float64) {
+	db := update.db
+	sqlStr := "INSERT INTO test_results (result_type, x_axis, y_axis) VALUES (?, ?, ?)"
+	stmt, err := db.Prepare(sqlStr)
+	checkErr(err)
+	_, err = stmt.Exec(resultType, x, y)
+	checkErr(err)
+}
+
+func (update *Update) SelectTestResults() []GraphValue {
+	db := update.db
+	sqlStr := "SELECT result_type, x_axis, y_axis FROM test_results"
+	stmt, err := db.Prepare(sqlStr)
+	checkErr(err)
+	rows, err := stmt.Query()
+	checkErr(err)
+
+	var resultType string
+	var x float32
+	var y float32
+	result := make([]GraphValue, 0)
+
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&resultType, &x, &y)
+		checkErr(err)
+		result = append(result, GraphValue{resultType, x, y})
+	}
+	return result[0:len(result)]
+
 }
 
 func (update *Update) Delete(dataSet map[int][]string) {
@@ -226,4 +380,10 @@ func (update *Update) Clear() {
 		_, err := db.Exec("TRUNCATE TABLE unsub_" + strconv.Itoa(i))
 		checkErr(err)
 	}
+}
+
+func (update *Update) ClearTestResults() {
+	db := update.db
+	_, err := db.Exec("TRUNCATE TABLE test_results")
+	checkErr(err)
 }

@@ -8,27 +8,30 @@ import (
 	"github.com/willf/bloom"
 )
 
-const bitArraySize = 1000000
-const numberOfHashFunction = 7
 const databaseSize = 15
 
 // BloomFilter struct holds the pointer to the bloomFilter object
 type BloomFilter struct {
-	bloomFilter *bloom.BloomFilter
+	bloomFilter  *bloom.BloomFilter
+	bitArraySize uint
+	numHashFunc  uint
 }
 
 // New is called to instantiate a new BloomFilter object
-func New() *BloomFilter {
-	bloomFilter := bloom.New(bitArraySize, numberOfHashFunction)
-	return &BloomFilter{bloomFilter}
+func New(bitArraySize, numHashFunc uint) *BloomFilter {
+	bloomFilter := bloom.New(bitArraySize, numHashFunc)
+	return &BloomFilter{bloomFilter, bitArraySize, numHashFunc}
+}
+
+func (bf *BloomFilter) GetStats(dbSize uint) float64 {
+	return bf.bloomFilter.EstimateFalsePositiveRate(dbSize)
 }
 
 // UpdateBloomFilter will be called if unsubscribed emails are added to the database
 // (unsubscribe emails), can be used for initially populating the bloom filter and
 // updating the bloom filter
 func (bf *BloomFilter) UpdateBloomFilter() {
-	var arrayOfUserIDEmail []string
-	arrayOfUserIDEmail = getArrayOfUserIDEmail()
+	arrayOfUserIDEmail := getArrayOfUserIDEmail()
 	for i := range arrayOfUserIDEmail {
 		bf.bloomFilter.AddString(arrayOfUserIDEmail[i])
 	}
@@ -37,9 +40,8 @@ func (bf *BloomFilter) UpdateBloomFilter() {
 // RepopulateBloomFilter will be called if unsubscribed emails are removed from the
 // database (customers resubscribe to emails)
 func (bf *BloomFilter) RepopulateBloomFilter() {
-	newBloomFilter := bloom.New(bitArraySize, numberOfHashFunction)
-	var arrayOfUserIDEmail []string
-	arrayOfUserIDEmail = getArrayOfUserIDEmail()
+	newBloomFilter := bloom.New(bf.bitArraySize, bf.numHashFunc)
+	arrayOfUserIDEmail := getArrayOfUserIDEmail()
 	for i := range arrayOfUserIDEmail {
 		newBloomFilter.AddString(arrayOfUserIDEmail[i])
 	}
