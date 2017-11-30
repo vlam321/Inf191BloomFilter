@@ -32,8 +32,8 @@ type SqlStrVal struct {
 
 type GraphValue struct {
 	graphType string
-	X         float32
-	Y         float32
+	X         float64
+	Y         float64
 }
 
 func modId(userid int) int {
@@ -336,8 +336,8 @@ func (update *Update) SelectTestResults() []GraphValue {
 	checkErr(err)
 
 	var resultType string
-	var x float32
-	var y float32
+	var x float64
+	var y float64
 	result := make([]GraphValue, 0)
 
 	defer rows.Close()
