@@ -3,7 +3,7 @@ client. The client is responsible for makine http requests
 to the dbServer and bloomFilterServer
 */
 
-package Inf191BloomFilter
+package main
 
 import (
 	"Inf191BloomFilter/bloomDataGenerator"
