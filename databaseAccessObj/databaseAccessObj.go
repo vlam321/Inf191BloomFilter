@@ -32,8 +32,8 @@ type SqlStrVal struct {
 
 type GraphValue struct {
 	graphType string
-	x         float32
-	y         float32
+	X         float32
+	Y         float32
 }
 
 func modId(userid int) int {
@@ -318,7 +318,7 @@ func (update *Update) Insert(dataSet map[int][]string) {
 	}
 }
 
-func (update *Update) LogTestResult(resultType string, x, y float32) {
+func (update *Update) LogTestResult(resultType string, x, y float64) {
 	db := update.db
 	sqlStr := "INSERT INTO test_results (result_type, x_axis, y_axis) VALUES (?, ?, ?)"
 	stmt, err := db.Prepare(sqlStr)
@@ -380,4 +380,10 @@ func (update *Update) Clear() {
 		_, err := db.Exec("TRUNCATE TABLE unsub_" + strconv.Itoa(i))
 		checkErr(err)
 	}
+}
+
+func (update *Update) ClearTestResults() {
+	db := update.db
+	_, err := db.Exec("TRUNCATE TABLE test_results")
+	checkErr(err)
 }

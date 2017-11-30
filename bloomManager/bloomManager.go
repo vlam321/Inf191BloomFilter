@@ -12,9 +12,9 @@ const databaseSize = 15
 
 // BloomFilter struct holds the pointer to the bloomFilter object
 type BloomFilter struct {
-	bloomFilter *bloom.BloomFilter
+	bloomFilter  *bloom.BloomFilter
 	bitArraySize uint
-	numHashFunc uint
+	numHashFunc  uint
 }
 
 // New is called to instantiate a new BloomFilter object
@@ -23,8 +23,8 @@ func New(bitArraySize, numHashFunc uint) *BloomFilter {
 	return &BloomFilter{bloomFilter, bitArraySize, numHashFunc}
 }
 
-func (bf *BloomFilter) getStats(dbSize uint) (uint, uint, float64){
-	return bf.bitArraySize, bf.numHashFunc, bf.bloomFilter.EstimateFalsePositiveRate(dbSize)
+func (bf *BloomFilter) GetStats(dbSize uint) float64 {
+	return bf.bloomFilter.EstimateFalsePositiveRate(dbSize)
 }
 
 // UpdateBloomFilter will be called if unsubscribed emails are added to the database
@@ -40,7 +40,7 @@ func (bf *BloomFilter) UpdateBloomFilter() {
 // RepopulateBloomFilter will be called if unsubscribed emails are removed from the
 // database (customers resubscribe to emails)
 func (bf *BloomFilter) RepopulateBloomFilter() {
-	newBloomFilter := bloom.New(bf.bitArraySize,bf.numHashFunc)
+	newBloomFilter := bloom.New(bf.bitArraySize, bf.numHashFunc)
 	arrayOfUserIDEmail := getArrayOfUserIDEmail()
 	for i := range arrayOfUserIDEmail {
 		newBloomFilter.AddString(arrayOfUserIDEmail[i])

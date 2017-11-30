@@ -2,6 +2,7 @@ package main
 
 import (
 	"Inf191BloomFilter/bloomDataGenerator"
+	"Inf191BloomFilter/bloomManager"
 	"Inf191BloomFilter/databaseAccessObj"
 	"bytes"
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"testing"
 )
 
@@ -55,6 +57,28 @@ func conv2Buff(idEmailJson []byte) io.Reader {
 	err := json.NewEncoder(buff).Encode(&idEmailJson)
 	checkErr(err)
 	return buff
+}
+
+func getBFStats(bitArrSize, dbSize uint) float64 {
+	numHashFunc := uint(10)
+	bf := bloomManager.New(bitArrSize, numHashFunc)
+	return bf.GetStats(dbSize)
+}
+
+func benchFalsePositiveProbility(dao *databaseAccessObj.Update, fromDBSize, toDBSize uint) {
+	var prob float64
+	bitArrSize := uint(100000)
+	for fromDBSize < toDBSize || prob > 0.01 {
+		prob = getBFStats(bitArrSize, fromDBSize)
+		dao.LogTestResult("falposprob_bitarr_prob_"+strconv.Itoa(int(fromDBSize)), float64(bitArrSize), float64(prob))
+		if prob > 0.01 {
+			bitArrSize *= 2
+		} else {
+			fmt.Printf("Ran false-positive probility benchmark with database size of %d rows\n", int(fromDBSize))
+			bitArrSize = 100000
+			fromDBSize *= 2
+		}
+	}
 }
 
 func getUnsub(dataset map[int][]string) []string {
@@ -112,42 +136,44 @@ func BenchmarkUnsubMembership32000(b *testing.B) { benchmarkUnsubMembership(3200
 
 func main() {
 	dao := databaseAccessObj.New(dsn)
+	dao.ClearTestResults()
+	benchFalsePositiveProbility(dao, 100000, 5000000)
 
 	res := testing.Benchmark(BenchmarkUpdate1000)
-	dao.LogTestResult("update_size_timeperop", float32(1000), float32(res.NsPerOp()))
+	dao.LogTestResult("update_size_timeperop", float64(1000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUpdate2000)
-	dao.LogTestResult("update_size_timeperop", float32(2000), float32(res.NsPerOp()))
+	dao.LogTestResult("update_size_timeperop", float64(2000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUpdate4000)
-	dao.LogTestResult("update_size_timeperop", float32(4000), float32(res.NsPerOp()))
+	dao.LogTestResult("update_size_timeperop", float64(4000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUpdate8000)
-	dao.LogTestResult("update_size_timeperop", float32(8000), float32(res.NsPerOp()))
+	dao.LogTestResult("update_size_timeperop", float64(8000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUpdate16000)
-	dao.LogTestResult("update_size_timeperop", float32(16000), float32(res.NsPerOp()))
+	dao.LogTestResult("update_size_timeperop", float64(16000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUpdate32000)
-	dao.LogTestResult("update_size_timeperop", float32(32000), float32(res.NsPerOp()))
+	dao.LogTestResult("update_size_timeperop", float64(32000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUnsubMembership1000)
-	dao.LogTestResult("unsubmembership_size_timeperop", float32(1000), float32(res.NsPerOp()))
+	dao.LogTestResult("unsubmembership_size_timeperop", float64(1000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUnsubMembership2000)
-	dao.LogTestResult("unsubmembership_size_timeperop", float32(2000), float32(res.NsPerOp()))
+	dao.LogTestResult("unsubmembership_size_timeperop", float64(2000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUnsubMembership4000)
-	dao.LogTestResult("unsubmembership_size_timeperop", float32(4000), float32(res.NsPerOp()))
+	dao.LogTestResult("unsubmembership_size_timeperop", float64(4000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUnsubMembership8000)
-	dao.LogTestResult("unsubmembership_size_timeperop", float32(8000), float32(res.NsPerOp()))
+	dao.LogTestResult("unsubmembership_size_timeperop", float64(8000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUnsubMembership16000)
-	dao.LogTestResult("unsubmembership_size_timeperop", float32(18000), float32(res.NsPerOp()))
+	dao.LogTestResult("unsubmembership_size_timeperop", float64(18000), float64(res.NsPerOp()))
 
 	res = testing.Benchmark(BenchmarkUnsubMembership32000)
-	dao.LogTestResult("unsubmembership_size_timeperop", float32(32000), float32(res.NsPerOp()))
+	dao.LogTestResult("unsubmembership_size_timeperop", float64(32000), float64(res.NsPerOp()))
 
 	dao.CloseConnection()
 }
