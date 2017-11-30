@@ -129,14 +129,37 @@ func (update *Update) Select(dataSet map[int][]string) map[int][]string {
 	}
 	return result
 }
+/*
+func (update *Update) SelectByShard(dataSet map[int][]string) map[int][]string{
+	//db := update.db
+	result := make(map[int][]string)
+	shardMap := make(map[int][]Pair)
+	for userid, emails := range dataSet {
+		shardMap[modId(userid)] = append(shardMap[modId(userid)], Pair{userid, emails})
+	}
+	int pairFlag = 0;
+	int emailFlag = 0;
+	int counter = 0;
+	for shardNum := range shardMap{
+		sqlStr := "SELECT user_id, email FROM unsub_" + shardNum + "WHERE "
+		for p := range pairs{
+			for e := range pairs[p].emails{
+				while(counter < 32000){
+					sqlStr += "(user_id = ? AND email = ?) OR "
+					counter += 2
+				}
+			}
+		}
+	}
+	return result
+}
+*/
 
 func (update *Update) Tselect(dataSet map[int][]string) map[int][]string {
 	// Return items that exist both in input dataSet and database
 	db := update.db
 	result := make(map[int][]string)
-
 	var sqlStrings []SqlStrVal
-
 	for userid, emails := range dataSet {
 		counter := 0
 		tableName := "unsub_" + strconv.Itoa(modId(userid))
@@ -151,7 +174,6 @@ func (update *Update) Tselect(dataSet map[int][]string) map[int][]string {
 				sqlStr = "SELECT user_id, email FROM " + tableName + " WHERE user_id = " + strconv.Itoa(userid) + " AND ("
 				vals = make([]interface{}, 0)
 				counter = 0
-
 			}
 		}
 		if len(vals) != 0 {
@@ -163,7 +185,6 @@ func (update *Update) Tselect(dataSet map[int][]string) map[int][]string {
 				continue
 			}
 			checkErr(err)
-
 			for rows.Next() {
 				var user_id int
 				var email string
@@ -175,6 +196,7 @@ func (update *Update) Tselect(dataSet map[int][]string) map[int][]string {
 	}
 	return result
 }
+
 
 func (update *Update) SelectByTimestamp(ts time.Time) map[int][]string {
 	// Select all items from database where input time after item's timestamp

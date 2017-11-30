@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"os"
 )
 
 type payload struct {
@@ -22,9 +23,8 @@ type payload struct {
 	Emails []string
 }
 
-//Global variable
 //The bloom filter for this server
-var bf = bloomManager.New()
+var bf *bloomManager.BloomFilter
 
 //handleUpdate will update the respective bloomFilter
 //server will keep track of when the last updated time is. to call
@@ -102,7 +102,15 @@ func timeManager() {
 	fmt.Println("Ticker stopped")
 }
 
+func setBloomFilter(bitArraySize, numHashFunc uint){
+	bf = bloomManager.New(bitArraySize, numHashFunc)
+}
+
 func main() {
+
+	bitArraySize, _ := strconv.ParseUint(os.Args[1], 10, 64)
+	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
+	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
 
 	timeManager()
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
