@@ -159,21 +159,39 @@ func main() {
 
 	res = testing.Benchmark(BenchmarkUnsubMembership1000)
 	dao.LogTestResult("unsubmembership_size_timeperop", float64(1000), float64(res.NsPerOp()))
+	total_req := float64(res.N * 1000)
+	total_time := res.T
+	dao.LogTestResult("unsubmembership_size_reqpersec", float64(1000), total_req/total_time.Seconds())
 
 	res = testing.Benchmark(BenchmarkUnsubMembership2000)
 	dao.LogTestResult("unsubmembership_size_timeperop", float64(2000), float64(res.NsPerOp()))
+	total_req = float64(res.N * 2000)
+	total_time = res.T
+	dao.LogTestResult("unsubmembership_size_reqpersec", float64(2000), total_req/total_time.Seconds())
 
 	res = testing.Benchmark(BenchmarkUnsubMembership4000)
 	dao.LogTestResult("unsubmembership_size_timeperop", float64(4000), float64(res.NsPerOp()))
+	total_req = float64(res.N * 4000)
+	total_time = res.T
+	dao.LogTestResult("unsubmembership_size_reqpersec", float64(4000), total_req/total_time.Seconds())
 
 	res = testing.Benchmark(BenchmarkUnsubMembership8000)
 	dao.LogTestResult("unsubmembership_size_timeperop", float64(8000), float64(res.NsPerOp()))
+	total_req = float64(res.N * 8000)
+	total_time = res.T
+	dao.LogTestResult("unsubmembership_size_reqpersec", float64(8000), total_req/total_time.Seconds())
 
 	res = testing.Benchmark(BenchmarkUnsubMembership16000)
-	dao.LogTestResult("unsubmembership_size_timeperop", float64(18000), float64(res.NsPerOp()))
+	dao.LogTestResult("unsubmembership_size_timeperop", float64(16000), float64(res.NsPerOp()))
+	total_req = float64(res.N * 16000)
+	total_time = res.T
+	dao.LogTestResult("unsubmembership_size_reqpersec", float64(16000), total_req/total_time.Seconds())
 
 	res = testing.Benchmark(BenchmarkUnsubMembership32000)
 	dao.LogTestResult("unsubmembership_size_timeperop", float64(32000), float64(res.NsPerOp()))
+	total_req = float64(res.N * 32000)
+	total_time = res.T
+	dao.LogTestResult("unsubmembership_size_reqpersec", float64(32000), total_req/total_time.Seconds())
 
 	dao.CloseConnection()
 }
