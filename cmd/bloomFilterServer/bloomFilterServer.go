@@ -81,8 +81,6 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	js, err := json.Marshal(filteredEmails)
 	checkErr(err)
 
-	fmt.Println(js)
-
 	//write back to client
 	w.Write(js)
 }
