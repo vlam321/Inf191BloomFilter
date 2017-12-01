@@ -13,7 +13,7 @@ func checkErr(err error) {
 
 func main() {
 
-	g, err := graphite.NewGraphite("localhost", 2003)
+	g, err := graphite.NewGraphite("192.168.99.100", 2003)
 	checkErr(err)
 
 	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
