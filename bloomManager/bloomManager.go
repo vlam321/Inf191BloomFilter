@@ -30,6 +30,8 @@ func (bf *BloomFilter) GetStats(dbSize uint) float64 {
 // UpdateBloomFilter will be called if unsubscribed emails are added to the database
 // (unsubscribe emails), can be used for initially populating the bloom filter and
 // updating the bloom filter
+
+// Should set to update one value? or delete???
 func (bf *BloomFilter) UpdateBloomFilter() {
 	arrayOfUserIDEmail := getArrayOfUserIDEmail()
 	for i := range arrayOfUserIDEmail {
@@ -91,6 +93,7 @@ func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(arrayOfEmails []string) []st
 			mapOfPositives[key] = append(valueArray, value)
 		}
 	}
+	//Egineer said: Set adresss to a configurable value later on?
 	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
 	databaseResultMap := dao.Select(mapOfPositives)
 	// convert back to array
