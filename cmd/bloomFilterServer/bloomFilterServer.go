@@ -5,6 +5,12 @@ API endpoints to access the following functionalities:
 		- AddToBloomFilter
 		- RepopulateBloomFilter
 	- GetArrayOfUnsubscribedEmails
+
+	- when the http endpoint is hit go to the graphana to graph those metrics
+	- use docker to integrate with AWS?
+	- graphana and graphite have docker images
+	- mysql database is currently local buttttt, should spin up a socker container with mysql
+		- so we're all on the same page
 */
 package main
 
@@ -85,21 +91,17 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func timeManager() {
+//updateBloomFilterBackground manages the periodic updates of the bloom
+//filter. Update calls repopulate, creating a new updated bloom filter
+func updateBloomFilterBackground() {
+	//Set new ticker to every 2 seconds
 	ticker := time.NewTicker(time.Second * 2)
-	go func() {
-		for t := range ticker.C {
-			//Call update bloom filter
-			bf.UpdateBloomFilter()
-			fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 
-		}
-	}()
-	//Figure out how to run without sleep?
-	//use go forever? an option
-	time.Sleep(time.Second * 10)
-	ticker.Stop()
-	fmt.Println("Ticker stopped")
+	for t := range ticker.C {
+		//Call update bloom filter
+		bf.UpdateBloomFilter()
+		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
+	}
 }
 
 func setBloomFilter(bitArraySize, numHashFunc uint) {
@@ -112,7 +114,9 @@ func main() {
 	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
 	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
 
-	timeManager()
+	//Run go routine to make periodic updates
+	//Runs until the server is stopped
+	go updateBloomFilterBackground()
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.HandleFunc("/update", handleUpdate)
 
