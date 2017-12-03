@@ -1,14 +1,14 @@
 package bloomManager
 
 import (
-	"Inf191BloomFilter/databaseAccessObj"
 	"strconv"
-	"strings"
+
+	"Inf191BloomFilter/databaseAccessObj"
 
 	"github.com/willf/bloom"
 )
 
-const databaseSize = 15
+const dbShards = 15
 
 // BloomFilter struct holds the pointer to the bloomFilter object
 type BloomFilter struct {
@@ -23,85 +23,73 @@ func New(bitArraySize, numHashFunc uint) *BloomFilter {
 	return &BloomFilter{bloomFilter, bitArraySize, numHashFunc}
 }
 
+// GetStats returns false positive rate of bloom filter based on input size
 func (bf *BloomFilter) GetStats(dbSize uint) float64 {
 	return bf.bloomFilter.EstimateFalsePositiveRate(dbSize)
 }
 
-// UpdateBloomFilter will be called if unsubscribed emails are added to the database
+// not in use yet
+// UpdateBloomFilter will be called if emails are added to the database
 // (unsubscribe emails), can be used for initially populating the bloom filter and
 // updating the bloom filter
+/*
+func (bf *BloomFilter) UpdateBloomFilter(ts time.Time) {
+	db := databaseAccessObj.New()
+	defer db.CloseConnection()
 
-// Should set to update one value? or delete???
-func (bf *BloomFilter) UpdateBloomFilter() {
-	arrayOfUserIDEmail := getArrayOfUserIDEmail()
-	for i := range arrayOfUserIDEmail {
-		bf.bloomFilter.AddString(arrayOfUserIDEmail[i])
+	for i := 0; i<dbShards; i++{
+		data := db.SelectTable(i)
+		for userid, emails := range(data){
+			u := strconv.Itoa(userid)
+			for e := range emails {
+				bf.bloomFilter.AddString(u+"_"+emails[e])
+			}
+		}
 	}
 }
+*/
 
-// RepopulateBloomFilter will be called if unsubscribed emails are removed from the
-// database (customers resubscribe to emails)
+// RepopulateBloomFilter will be called if emails are removed from the
+// database (customers resubscribe)
+// also used to initially populate bloom filter
 func (bf *BloomFilter) RepopulateBloomFilter() {
+	db := databaseAccessObj.New()
+	defer db.CloseConnection()
 	newBloomFilter := bloom.New(bf.bitArraySize, bf.numHashFunc)
-	arrayOfUserIDEmail := getArrayOfUserIDEmail()
-	for i := range arrayOfUserIDEmail {
-		newBloomFilter.AddString(arrayOfUserIDEmail[i])
+
+	for i:=0; i<dbShards; i++{
+		data := db.SelectTable(i)
+		for userid, emails := range data{
+			u := strconv.Itoa(userid)
+			for e := range emails{
+				newBloomFilter.AddString(u+"_"+emails[e])
+			}
+		}
 	}
 	bf.bloomFilter = newBloomFilter.Copy()
 }
 
-// getArrayOfUserIDEmail retrieves all records in the database shards and returns an array
-// of strings in the form of userid_email
-func getArrayOfUserIDEmail() []string {
-	var arrayOfUserIDEmail []string
-	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
-	// loops through all tables in the database
-	for j := 0; j < databaseSize; j++ {
-		databaseResultMap := dao.SelectTable(j)
-		for key, value := range databaseResultMap {
-			for i := range value {
-				arrayOfUserIDEmail = append(arrayOfUserIDEmail, strconv.Itoa(int(key))+"_"+value[i])
+// filter given a map[int][]string returns items that return true from bf
+func (bf *BloomFilter) filter(dataSet map[int][]string) map[int][]string{
+	result := make(map[int][]string)
+	for userid, emails := range dataSet{
+		u := strconv.Itoa(userid)
+		for e := range emails{
+			if bf.bloomFilter.TestString(u+"_"+emails[e]){
+				result[userid] = append(result[userid], emails[e])
 			}
 		}
 	}
-	dao.CloseConnection()
-	return arrayOfUserIDEmail
+	return result
 }
 
-// GetArrayOfUnsubscribedEmails given a list of strings will return a list of those
-// that exist in the bloom filter
-func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(arrayOfEmails []string) []string {
-	var arrayOfUnsubscribedEmails []string
-	var arrayOfUnsubscribedEmails2 []string
-	mapOfPositives := make(map[int][]string)
-	// filters true results into an array
-	for i := range arrayOfEmails {
-		if bf.bloomFilter.TestString(arrayOfEmails[i]) {
-			arrayOfUnsubscribedEmails = append(arrayOfUnsubscribedEmails, arrayOfEmails[i])
-		}
-	}
-	// convert to map to check all trues with database to filter out the false positives
-	for i := range arrayOfUnsubscribedEmails {
-		keyValueArray := strings.Split(arrayOfUnsubscribedEmails[i], "_")
-		var key, _ = strconv.Atoi(keyValueArray[0])
-		var value = keyValueArray[1]
-		_, ok := mapOfPositives[key]
-		if ok {
-			mapOfPositives[key] = append(mapOfPositives[key], value)
-		} else {
-			var valueArray []string
-			mapOfPositives[key] = append(valueArray, value)
-		}
-	}
-	//Egineer said: Set adresss to a configurable value later on?
-	dao := databaseAccessObj.New("bloom:test@/unsubscribed")
-	databaseResultMap := dao.Select(mapOfPositives)
-	// convert back to array
-	for key, value := range databaseResultMap {
-		for i := range value {
-			arrayOfUnsubscribedEmails2 = append(arrayOfUnsubscribedEmails2, strconv.Itoa(int(key))+"_"+value[i])
-		}
-	}
-	dao.CloseConnection()
-	return arrayOfUnsubscribedEmails2
+// GetArrayOfUnsubscribedEmails given a map of user_id:[emails] will return a map[user_id]:[emails] 
+// of those that exist in the db
+func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(dataSet map[int][]string) map[int][]string {
+	// filters true results into an map[int][]string 
+	filtered := bf.filter(dataSet)
+	db := databaseAccessObj.New()
+	defer db.CloseConnection()
+	result := db.Select(filtered)
+	return result
 }

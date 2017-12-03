@@ -1,10 +1,8 @@
 package main
 
 import (
-	"Inf191BloomFilter/bloomDataGenerator"
-	"Inf191BloomFilter/bloomManager"
-	"Inf191BloomFilter/databaseAccessObj"
 	"bytes"
+	"log"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,9 +10,12 @@ import (
 	"net/http"
 	"strconv"
 	"testing"
+
+	"Inf191BloomFilter/bloomDataGenerator"
+	"Inf191BloomFilter/bloomManager"
+	"Inf191BloomFilter/databaseAccessObj"
 )
 
-const dsn = "bloom:test@/unsubscribed"
 const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
 const updateEndpoint = "http://localhost:9090/update"
 
@@ -27,45 +28,54 @@ type Result struct {
 	Trues []string
 }
 
-func checkErr(err error) {
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
+// repopulateDatabase clears db then adds random data based on numValues
 func repopulateDatabase(numValues int) {
 	data := bloomDataGenerator.GenData(1, numValues, numValues+1)
-	dao := databaseAccessObj.New(dsn)
+	dao := databaseAccessObj.New()
 	dao.Clear()
 	dao.Insert(data)
 	dao.CloseConnection()
 }
 
+// updateBitArray makes request to updateEndpoint to update bf
 func updateBitArray() {
 	_, err := http.Get(updateEndpoint)
-	checkErr(err)
+	if err != nil{
+		log.Printf("Error updating bit array: %v\n", err)
+		return
+	}
 }
 
+// conv2Json converts payload input into JSON
 func conv2Json(payload Payload) []byte {
 	data, err := json.Marshal(payload)
-	checkErr(err)
+	if err != nil{
+		log.Printf("Error json marshaling: %v\n", err)
+		return nil
+	}
 	return data
 }
 
+// conv2Buff converts JSON into bytes
 func conv2Buff(idEmailJson []byte) io.Reader {
 	buff := new(bytes.Buffer)
 	err := json.NewEncoder(buff).Encode(&idEmailJson)
-	checkErr(err)
+	if err != nil{
+		log.Printf("Error converting JSON to bytes: %v\n", err)
+		return nil
+	}
 	return buff
 }
 
+// getBFStats returns false positive rate of bloom filter
 func getBFStats(bitArrSize, dbSize uint) float64 {
 	numHashFunc := uint(10)
 	bf := bloomManager.New(bitArrSize, numHashFunc)
 	return bf.GetStats(dbSize)
 }
 
-func benchFalsePositiveProbility(dao *databaseAccessObj.Update, fromDBSize, toDBSize uint) {
+// benchFalsePositiveProbability benchmarks different false postive rates based on db size
+func benchFalsePositiveProbability(dao *databaseAccessObj.Conn, fromDBSize, toDBSize uint) {
 	var prob float64
 	bitArrSize := uint(100000)
 	for fromDBSize < toDBSize || prob > 0.01 {
@@ -81,6 +91,7 @@ func benchFalsePositiveProbility(dao *databaseAccessObj.Update, fromDBSize, toDB
 	}
 }
 
+// getUnsub 
 func getUnsub(dataset map[int][]string) []string {
 	idEmailpayload := Payload{0, dataset[0]}
 	idEmailJson := conv2Json(idEmailpayload)
@@ -90,11 +101,17 @@ func getUnsub(dataset map[int][]string) []string {
 
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
-	checkErr(err)
+	if err != nil{
+		log.Printf("Error reading body: %v\n", err)
+		return nil
+	}
 
 	var result Result
 	err = json.Unmarshal(body, &result)
-	checkErr(err)
+	if err != nil{
+		log.Printf("Error unmarshaling body: %v\n", err)
+		return nil
+	}
 	return result.Trues
 }
 
@@ -109,9 +126,9 @@ func benchmarkBitArrayUpdate(numValues int, b *testing.B) {
 }
 
 func benchmarkUnsubMembership(numIDEmailPairs int, b *testing.B) {
-	dao := databaseAccessObj.New(dsn)
+	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
 	dataset := dao.SelectRandSubset(0, numIDEmailPairs)
-	dao.CloseConnection()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_ = getUnsub(dataset)
@@ -135,9 +152,10 @@ func BenchmarkUnsubMembership16000(b *testing.B) { benchmarkUnsubMembership(1600
 func BenchmarkUnsubMembership32000(b *testing.B) { benchmarkUnsubMembership(32000, b) }
 
 func main() {
-	dao := databaseAccessObj.New(dsn)
+	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
 	dao.ClearTestResults()
-	benchFalsePositiveProbility(dao, 100000, 5000000)
+	benchFalsePositiveProbability(dao, 100000, 5000000)
 
 	res := testing.Benchmark(BenchmarkUpdate1000)
 	dao.LogTestResult("update_size_timeperop", float64(1000), float64(res.NsPerOp()))
@@ -193,5 +211,4 @@ func main() {
 	total_time = res.T
 	dao.LogTestResult("unsubmembership_size_reqpersec", float64(32000), total_req/total_time.Seconds())
 
-	dao.CloseConnection()
 }

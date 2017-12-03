@@ -15,7 +15,6 @@ API endpoints to access the following functionalities:
 package main
 
 import (
-	"Inf191BloomFilter/bloomManager"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -24,6 +23,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"Inf191BloomFilter/bloomManager"
 
 	"github.com/cyberdelia/go-metrics-graphite"
 	metrics "github.com/rcrowley/go-metrics"
@@ -45,13 +46,7 @@ func handleUpdate(w http.ResponseWriter, r *http.Request) {
 	bf.RepopulateBloomFilter()
 }
 
-//checkErr checks fro errors in the decoded text and encoded text...
-func checkErr(err error) {
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
+// handleMetric records metrics (temporary method?)
 func handleMetric(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -109,19 +104,24 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error unmashaling payload %v %s\n", err, string(buff))
 		return
 	}
+	/*
 	var emailInputs []string
 	for i := range payload.Emails {
 		emailInputs = append(emailInputs, strconv.Itoa(payload.UserId)+"_"+payload.Emails[i])
 	}
+	*/
 
 	//uses bloomManager to get the result of unsubscribed emails
 	//puts them in struct, result
-	emails := bf.GetArrayOfUnsubscribedEmails(emailInputs)
-	filteredEmails := Result{emails}
+	emails := bf.GetArrayOfUnsubscribedEmails(map[int][]string{payload.UserId:payload.Emails})
+	// filteredEmails := Result{emails}
 
 	//convert result to json
-	js, err := json.Marshal(filteredEmails)
-	checkErr(err)
+	js, err := json.Marshal(emails)
+	if err != nil{
+		log.Printf("Error marshaling filteredEmails: %v\n", err)
+		return
+	}
 
 	//write back to client
 	w.Write(js)
@@ -131,11 +131,11 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 //filter. Update calls repopulate, creating a new updated bloom filter
 func updateBloomFilterBackground() {
 	//Set new ticker to every 2 seconds
-	ticker := time.NewTicker(time.Second * 2)
+	ticker := time.NewTicker(time.Second * 10)
 
 	for t := range ticker.C {
 		//Call update bloom filter
-		bf.UpdateBloomFilter()
+		bf.RepopulateBloomFilter()
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
 }
@@ -150,6 +150,7 @@ func main() {
 	bitArraySize, _ := strconv.ParseUint(os.Args[1], 10, 64)
 	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
 	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
+	bf.RepopulateBloomFilter()
 
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped

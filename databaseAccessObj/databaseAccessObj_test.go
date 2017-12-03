@@ -14,27 +14,19 @@ package databaseAccessObj
 
 import (
 	"time"
-	"fmt"
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
-const dsn = "bloom:test@/unsubscribed"
-
-func TestMain(m *testing.M){
-	db := New(dsn)
-	db.Clear()
-	m.Run()
-	db.CloseConnection()
-}
-
 func TestConnection(t *testing.T){
-	db := New(dsn)
+	db := New()
 	db.CloseConnection()
 }
 
 func TestHasTable(t *testing.T){
-	db := New(dsn)
+	db := New()
+	db.Clear()
 	assert.True(t, db.hasTable("unsubscribed", "unsub_0"))
 	assert.False(t, db.hasTable("unsubscribed", "nothere"))
 	assert.False(t, db.hasTable("unsubscribed", "nothereeither"))
@@ -43,7 +35,8 @@ func TestHasTable(t *testing.T){
 }
 
 func TestInsertAndSelect(t *testing.T){
-	db := New(dsn)
+	db := New()
+	db.Clear()
 	testData := make(map[int][]string)
 	testData[0] = []string{"a","b","c"}
 	testData[16] = []string{"d","e","f","g"}
@@ -54,7 +47,8 @@ func TestInsertAndSelect(t *testing.T){
 }
 
 func TestSelectTable(t *testing.T){
-	db := New(dsn)
+	db := New()
+	db.Clear()
 	testData := make(map[int][]string)
 	testData[3] = []string{"h","i","j"}
 	testData[18] = []string{"k","l","m","n","o"}
@@ -73,7 +67,8 @@ func TestSelectTable(t *testing.T){
 }
 
 func TestSelectByTimestamp(t *testing.T){
-	db := New(dsn)
+	db := New()
+	db.Clear()
 	testData := make(map[int][]string)
 	testData[6] = []string{"t","u","v","w"}
 	testData2 := make(map[int][]string)
@@ -88,9 +83,4 @@ func TestSelectByTimestamp(t *testing.T){
 	db.CloseConnection()
 }
 
-func BenchmarkInsert(b *testing.B){
-	for i := 0; i < b.N; i++{
-		fmt.Println("bench")
-	}
-}
 
