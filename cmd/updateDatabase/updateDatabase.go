@@ -1,12 +1,13 @@
 package main // probably need to convert this to a proper go test
 
 import (
-	"Inf191BloomFilter/bloomDataGenerator"
-	"Inf191BloomFilter/databaseAccessObj"
 	"flag"
 	"fmt"
 	"os"
 	"strconv"
+
+	"Inf191BloomFilter/bloomDataGenerator"
+	"Inf191BloomFilter/databaseAccessObj"
 )
 
 type UserInputs struct {
@@ -16,21 +17,10 @@ type UserInputs struct {
 	maxEmail int
 }
 
-const dsn = "bloom:test@/unsubscribed"
 const unsub_schema = `(user_id int(11), email varchar(255), ts timestamp default current_timestamp, primary key (user_id, email));`
 const test_result_schema = `(result_type varchar(30) NOT NULL, x_axis float NOT NULL, y_axis float NOT NULL );`
 
-func checkErr(err error) {
-	// check error from database if any
-	if err != nil {
-		panic(err)
-	}
-}
-
-// Grabs the command line argments
-// and return a Inputs object containinf the
-// values. And a nil if no cli atgements were
-// given
+// getCommandLineInputs returns object of user input; nil if no input
 func getCommandLineInputs() UserInputs {
 	cmdPtr := flag.String("cmd", "", `
 	Possible commands: 
@@ -48,30 +38,31 @@ func getCommandLineInputs() UserInputs {
 	return UserInputs{*cmdPtr, *userPtr, *minEmailPtr, *maxEmailPtr}
 }
 
-// Given the user inputs, clear existing data and repopulate
-// the table with new randomly generated data
+// handleRepopulate clears database and populates with random data based on input
 func handleRepopulate(numUser, minEmail, maxEmail int) {
-	dao := databaseAccessObj.New(dsn)
+	dao := databaseAccessObj.New()
 	dao.Clear()
 	dataset := bloomDataGenerator.GenData(numUser, minEmail, maxEmail)
 	dao.Insert(dataset)
 	dao.CloseConnection()
 }
 
+// handleAdd adds random data based on input to db
 func handleAdd(numUser, minEmail, maxEmail int) {
-	dao := databaseAccessObj.New(dsn)
+	dao := databaseAccessObj.New()
 	dataset := bloomDataGenerator.GenData(numUser, minEmail, maxEmail)
 	dao.Insert(dataset)
 	dao.CloseConnection()
 }
 
-func handleMkTbl() {
-	dao := databaseAccessObj.New(dsn)
+// handleMakeTable creates all tables necessary in db
+func handleMakeTable() {
+	dao := databaseAccessObj.New()
 	for i := 0; i < 15; i++ {
 		tablename := "unsub_" + strconv.Itoa(i)
-		dao.MkTbl(tablename, unsub_schema)
+		dao.MakeTable(tablename, unsub_schema)
 	}
-	dao.MkTbl("test_results", test_result_schema)
+	dao.MakeTable("test_results", test_result_schema)
 	dao.CloseConnection()
 }
 
@@ -83,8 +74,8 @@ func main() {
 	} else {
 		switch userInputs.command {
 		case "mktbls":
-			handleMkTbl()
-			fmt.Println("Done. Created tables in unsubscribed.")
+			handleMakeTable()
+			fmt.Printf("Done. Created tables in unsubscribed.\n")
 		case "repopulate":
 			handleRepopulate(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
 			fmt.Printf("Done. \n")
@@ -97,3 +88,4 @@ func main() {
 		}
 	}
 }
+
