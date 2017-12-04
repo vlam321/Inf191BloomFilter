@@ -1,8 +1,8 @@
 package databaseAccessObj
 
 import (
-	"log"
 	"database/sql"
+	"log"
 	"math"
 	"strconv"
 	"time"
@@ -12,6 +12,7 @@ import (
 
 // dbShards number of shards in database
 const dbShards int = 15
+
 // dsn username:password@/database used to login to MySQL db
 const dsn string = "bloom:test@/unsubscribed"
 
@@ -35,8 +36,8 @@ type SqlStrVal struct {
 // Metrics struct holds metrics
 type Metrics struct {
 	result_type string
-	X         float64
-	Y         float64
+	X           float64
+	Y           float64
 }
 
 // modId mod userid by number of database shards
@@ -62,8 +63,8 @@ func (conn *Conn) hasTable(databaseName, tableName string) bool {
 	var check string
 	err := db.QueryRow("SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name = ? LIMIT 1", databaseName, tableName).Scan(&check)
 
-	if err != nil{
-		if err == sql.ErrNoRows{
+	if err != nil {
+		if err == sql.ErrNoRows {
 			return false
 		} else {
 			log.Printf("Error : %v\n", err)
@@ -79,7 +80,7 @@ func (conn *Conn) dropTable(tableName string) {
 	db := conn.db
 	_, err := db.Exec("DROP TABLE IF EXISTS " + tableName)
 
-	if err != nil{
+	if err != nil {
 		log.Printf("Error dropping table: %v\n", err)
 		return
 	}
@@ -95,7 +96,7 @@ func (conn *Conn) MakeTable(tablename, schema string) {
 	db := conn.db
 	_, err := db.Exec("CREATE TABLE IF NOT EXISTS " + tablename + schema + ";")
 
-	if err != nil{
+	if err != nil {
 		log.Printf("Error creating table: %v\n", err)
 		return
 	}
@@ -107,13 +108,13 @@ func (conn *Conn) SelectRandSubset(tblNum, size int) map[int][]string {
 	result := make(map[int][]string)
 
 	stmt, err := db.Prepare("SELECT user_id, email FROM unsub_" + strconv.Itoa(tblNum) + " ORDER BY RAND() LIMIT ?;")
-	if err != nil{
+	if err != nil {
 		log.Printf("Error preparing statement: %v\n", err)
 		return nil
 	}
 
 	rows, err := stmt.Query(strconv.Itoa(size))
-	if err != nil{
+	if err != nil {
 		log.Printf("Error query: %v\n", err)
 		return nil
 	}
@@ -123,8 +124,8 @@ func (conn *Conn) SelectRandSubset(tblNum, size int) map[int][]string {
 	var email string
 	for rows.Next() {
 		err = rows.Scan(&user_id, &email)
-		if err != nil{
-			log .Printf("Error scanning row: %v\n", err)
+		if err != nil {
+			log.Printf("Error scanning row: %v\n", err)
 			return nil
 		}
 		result[user_id] = append(result[user_id], email)
@@ -223,8 +224,8 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 
 		for i := range sqlStrings {
 			rows, err := db.Query(sqlStrings[i].sqlStr[0:len(sqlStrings[i].sqlStr)-4]+")", sqlStrings[i].val...)
-			if err != nil{
-				if err == sql.ErrNoRows{
+			if err != nil {
+				if err == sql.ErrNoRows {
 					continue
 				} else {
 					log.Printf("Error query: %v\n", err)
@@ -235,7 +236,7 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 			for rows.Next() {
 				var email string
 				err = rows.Scan(&email)
-				if err != nil{
+				if err != nil {
 					log.Printf("Error scanning row: %v\n", err)
 					return nil
 				}
@@ -298,7 +299,7 @@ func (conn *Conn) SelectTable(tableNum int) map[int][]string {
 		var user_id int
 		var email string
 		err = rows.Scan(&user_id, &email)
-		if err != nil{
+		if err != nil {
 			log.Printf("Error scanning row: %v\n", err)
 		}
 		result[user_id] = append(result[user_id], email)
@@ -374,12 +375,12 @@ func (conn *Conn) Insert(dataSet map[int][]string) {
 
 	for i := range sqlStrings {
 		stmt, err := db.Prepare(sqlStrings[i].sqlStr[0 : len(sqlStrings[i].sqlStr)-2])
-		if err != nil{
+		if err != nil {
 			log.Printf("Error preparing statement: %v\n", err)
 			return
 		}
 		_, err = stmt.Exec(sqlStrings[i].val...)
-		if err != nil{
+		if err != nil {
 			log.Printf("Error executing statement: %v\n", err)
 			return
 		}
@@ -396,7 +397,7 @@ func (conn *Conn) LogTestResult(resultType string, x, y float64) {
 		return
 	}
 	_, err = stmt.Exec(resultType, x, y)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error executing statemetn: %v\n", err)
 		return
 	}
@@ -407,7 +408,7 @@ func (conn *Conn) SelectTestResults() []Metrics {
 	db := conn.db
 	sqlStr := "SELECT result_type, x_axis, y_axis FROM test_results"
 	rows, err := db.Query(sqlStr)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error query: %v\n", err)
 	}
 
@@ -419,7 +420,7 @@ func (conn *Conn) SelectTestResults() []Metrics {
 	defer rows.Close()
 	for rows.Next() {
 		err = rows.Scan(&resultType, &x, &y)
-		if err != nil{
+		if err != nil {
 			log.Printf("Error scanning row: %v\n", err)
 			return nil
 		}
@@ -440,15 +441,15 @@ func (conn *Conn) Delete(dataSet map[int][]string) {
 			sqlStr += "email = ? OR "
 			vals = append(vals, dataSet[userid][i])
 		}
-		sqlStr = sqlStr[0 : len(sqlStr)-4] + ")"
+		sqlStr = sqlStr[0:len(sqlStr)-4] + ")"
 
 		stmt, err := db.Prepare(sqlStr)
-		if err != nil{
+		if err != nil {
 			log.Printf("Error preparing statement: %v\n", err)
 			return
 		}
 		_, err = stmt.Exec(vals...)
-		if err != nil{
+		if err != nil {
 			log.Printf("Error executing statement %v\n", err)
 			return
 		}
@@ -460,7 +461,7 @@ func (conn *Conn) Clear() {
 	db := conn.db
 	for i := 0; i < 15; i++ {
 		_, err := db.Exec("TRUNCATE TABLE unsub_" + strconv.Itoa(i))
-		if err != nil{
+		if err != nil {
 			log.Printf("Error clearing tables: %v\n", err)
 			return
 		}
@@ -471,9 +472,8 @@ func (conn *Conn) Clear() {
 func (conn *Conn) ClearTestResults() {
 	db := conn.db
 	_, err := db.Exec("TRUNCATE TABLE test_results")
-	if err != nil{
+	if err != nil {
 		log.Printf("Error clearing test results: %v\n", err)
 		return
 	}
 }
-
