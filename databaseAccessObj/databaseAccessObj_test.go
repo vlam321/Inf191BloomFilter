@@ -46,6 +46,20 @@ func TestInsertAndSelect(t *testing.T){
 	db.CloseConnection()
 }
 
+func TestSelectQueryRow(t *testing.T){
+	db := New()
+	db.Clear()
+	testData := make(map[int][]string)
+	testData[0] = []string{"a","b","c"}
+	db.Insert(testData)
+	testData[0] = append(testData[0], "d")
+	result := db.SelectQueryRow(testData)
+	assert.Equal(t, len(result[0])-1, 3)
+	assert.Equal(t, testData[0][0], "a")
+	assert.Equal(t, testData[0][1], "b")
+	assert.Equal(t, testData[0][2], "c")
+}
+
 func TestSelectTable(t *testing.T){
 	db := New()
 	db.Clear()

@@ -90,6 +90,6 @@ func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(dataSet map[int][]string) ma
 	filtered := bf.filter(dataSet)
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
-	result := db.Select(filtered)
+	result := db.SelectQueryRow(filtered)
 	return result
 }
