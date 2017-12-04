@@ -193,6 +193,28 @@ func (update *Update) SelectByShard(dataSet map[int][]string) map[int][]string{
 }
 */
 
+func (conn *Conn) SelectQueryRowTx(dataSet map[int][]string) map[int][]string{
+	result := make(map[int][]string)
+	return result
+}
+
+func (conn *Conn) SelectQueryRow(dataSet map[int][]string) map[int][]string{
+	db := conn.db
+	result := make(map[int][]string)
+
+	for userid, emails := range dataSet{
+		tableName := "unsub_" + strconv.Itoa(modId(userid))
+		for e := range emails{
+			var user_id int
+			var email string
+			sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = ? and email = ?"
+			db.QueryRow(sqlStr, userid, emails[e]).Scan(&user_id, &email)
+			result[user_id] = append(result[user_id], email)
+		}
+	}
+	return result
+}
+
 // Select returns items that exist both in input dataSet and db
 func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 	db := conn.db
