@@ -194,78 +194,19 @@ func (update *Update) SelectByShard(dataSet map[int][]string) map[int][]string{
 }
 */
 
-func (conn *Conn) SelectQueryRowTx(dataSet map[int][]string) map[int][]string{
-	result := make(map[int][]string)
-	return result
-}
-
-func (conn *Conn) SelectQueryRow(dataSet map[int][]string) map[int][]string{
+func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 	db := conn.db
 	result := make(map[int][]string)
 
-	for userid, emails := range dataSet{
+	for userid, emails := range dataSet {
 		tableName := "unsub_" + strconv.Itoa(modId(userid))
-		for e := range emails{
+		for e := range emails {
 			var user_id int
 			var email string
 			sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = ? and email = ?"
 			db.QueryRow(sqlStr, userid, emails[e]).Scan(&user_id, &email)
 			result[user_id] = append(result[user_id], email)
 		}
-	}
-	return result
-}
-
-// Select returns items that exist both in input dataSet and db
-func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
-	db := conn.db
-	result := make(map[int][]string)
-	var sqlStrings []SqlStrVal
-
-	for userid, emails := range dataSet {
-		counter := 0
-		tableName := "unsub_" + strconv.Itoa(modId(userid))
-		sqlStr := "SELECT email FROM " + tableName + " WHERE user_id = " + strconv.Itoa(userid) + " AND ("
-		var vals []interface{}
-
-		for i := range emails {
-			sqlStr += "email = ? OR "
-			vals = append(vals, emails[i])
-			counter += 1
-			if counter >= 64000 {
-				sqlStrings = append(sqlStrings, SqlStrVal{sqlStr, vals[0:len(vals)]})
-				sqlStr = "SELECT email FROM " + tableName + " WHERE user_id = " + strconv.Itoa(userid) + " AND ("
-				vals = make([]interface{}, 0)
-				counter = 0
-			}
-		}
-
-		if len(vals) != 0 {
-			sqlStrings = append(sqlStrings, SqlStrVal{sqlStr, vals[0:len(vals)]})
-		}
-
-		for i := range sqlStrings {
-			rows, err := db.Query(sqlStrings[i].sqlStr[0:len(sqlStrings[i].sqlStr)-4]+")", sqlStrings[i].val...)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					continue
-				} else {
-					log.Printf("Error query: %v\n", err)
-					return nil
-				}
-			}
-			defer rows.Close()
-			for rows.Next() {
-				var email string
-				err = rows.Scan(&email)
-				if err != nil {
-					log.Printf("Error scanning row: %v\n", err)
-					return nil
-				}
-				result[userid] = append(result[userid], email)
-			}
-		}
-		sqlStrings = []SqlStrVal{}
 	}
 	return result
 }

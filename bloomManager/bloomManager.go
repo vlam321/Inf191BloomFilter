@@ -57,12 +57,12 @@ func (bf *BloomFilter) RepopulateBloomFilter() {
 	defer db.CloseConnection()
 	newBloomFilter := bloom.New(bf.bitArraySize, bf.numHashFunc)
 
-	for i:=0; i<dbShards; i++{
+	for i := 0; i < dbShards; i++ {
 		data := db.SelectTable(i)
-		for userid, emails := range data{
+		for userid, emails := range data {
 			u := strconv.Itoa(userid)
-			for e := range emails{
-				newBloomFilter.AddString(u+"_"+emails[e])
+			for e := range emails {
+				newBloomFilter.AddString(u + "_" + emails[e])
 			}
 		}
 	}
@@ -70,12 +70,12 @@ func (bf *BloomFilter) RepopulateBloomFilter() {
 }
 
 // filter given a map[int][]string returns items that return true from bf
-func (bf *BloomFilter) filter(dataSet map[int][]string) map[int][]string{
+func (bf *BloomFilter) filter(dataSet map[int][]string) map[int][]string {
 	result := make(map[int][]string)
-	for userid, emails := range dataSet{
+	for userid, emails := range dataSet {
 		u := strconv.Itoa(userid)
-		for e := range emails{
-			if bf.bloomFilter.TestString(u+"_"+emails[e]){
+		for e := range emails {
+			if bf.bloomFilter.TestString(u + "_" + emails[e]) {
 				result[userid] = append(result[userid], emails[e])
 			}
 		}
@@ -83,13 +83,13 @@ func (bf *BloomFilter) filter(dataSet map[int][]string) map[int][]string{
 	return result
 }
 
-// GetArrayOfUnsubscribedEmails given a map of user_id:[emails] will return a map[user_id]:[emails] 
+// GetArrayOfUnsubscribedEmails given a map of user_id:[emails] will return a map[user_id]:[emails]
 // of those that exist in the db
 func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(dataSet map[int][]string) map[int][]string {
-	// filters true results into an map[int][]string 
+	// filters true results into an map[int][]string
 	filtered := bf.filter(dataSet)
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
-	result := db.SelectQueryRow(filtered)
+	result := db.Select(filtered)
 	return result
 }
