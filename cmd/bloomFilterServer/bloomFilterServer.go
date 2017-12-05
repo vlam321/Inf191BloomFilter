@@ -129,6 +129,7 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error: Unable to read request data. %v\n", err.Error())

@@ -2,11 +2,10 @@ package main
 
 import (
 	"bytes"
-	"log"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"testing"
@@ -40,7 +39,7 @@ func repopulateDatabase(numValues int) {
 // updateBitArray makes request to updateEndpoint to update bf
 func updateBitArray() {
 	_, err := http.Get(updateEndpoint)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error updating bit array: %v\n", err)
 		return
 	}
@@ -49,22 +48,11 @@ func updateBitArray() {
 // conv2Json converts payload input into JSON
 func conv2Json(payload Payload) []byte {
 	data, err := json.Marshal(payload)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error json marshaling: %v\n", err)
 		return nil
 	}
 	return data
-}
-
-// conv2Buff converts JSON into bytes
-func conv2Buff(idEmailJson []byte) io.Reader {
-	buff := new(bytes.Buffer)
-	err := json.NewEncoder(buff).Encode(&idEmailJson)
-	if err != nil{
-		log.Printf("Error converting JSON to bytes: %v\n", err)
-		return nil
-	}
-	return buff
 }
 
 // getBFStats returns false positive rate of bloom filter
@@ -91,28 +79,27 @@ func benchFalsePositiveProbability(dao *databaseAccessObj.Conn, fromDBSize, toDB
 	}
 }
 
-// getUnsub 
-func getUnsub(dataset map[int][]string) []string {
+// getUnsub
+func getUnsub(dataset map[int][]string) map[int][]string {
 	idEmailpayload := Payload{0, dataset[0]}
 	idEmailJson := conv2Json(idEmailpayload)
-	buff := conv2Buff(idEmailJson)
 
-	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
+	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", bytes.NewBuffer(idEmailJson))
 
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error reading body: %v\n", err)
 		return nil
 	}
 
-	var result Result
+	var result map[int][]string
 	err = json.Unmarshal(body, &result)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error unmarshaling body: %v\n", err)
 		return nil
 	}
-	return result.Trues
+	return result
 }
 
 func benchmarkBitArrayUpdate(numValues int, b *testing.B) {
