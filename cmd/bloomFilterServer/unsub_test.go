@@ -12,13 +12,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-const membershipEndpoint = "http://localhost:9090/unsub"
+const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
 const updateEndpoint = "http://localhost:9090/update"
 
 type Payload struct {
@@ -42,7 +43,6 @@ func TestUnsub(t *testing.T) {
 	dao.Clear()
 
 	var dataSum []string
-	// buff := new(bytes.Buffer)
 	var pyld Payload
 
 	// Generate random id_email pairs (positives) and save it in a var
@@ -72,10 +72,6 @@ func TestUnsub(t *testing.T) {
 	data, err := json.Marshal(pyld)
 	checkErr(err)
 
-	// Encode to bytes buffer
-	// err = json.NewEncoder(buff).Encode(data)
-	// checkErr(err)
-
 	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", bytes.NewBuffer(data))
 
 	// Request for members that exist in D
@@ -94,13 +90,10 @@ func TestUnsub(t *testing.T) {
 	assert.True(t, len(result[0]) == len(inDB[0]))
 }
 
-/*
 func TestNewUnsubscribes(t *testing.T) {
 	dao := databaseAccessObj.New()
 	// Clear values in tables for clean test
 	dao.Clear()
-
-	buff := new(bytes.Buffer)
 
 	// Increasing these values may produce false positives
 	dataSet := bloomDataGenerator.GenData(1, 1000, 2000)
@@ -109,12 +102,9 @@ func TestNewUnsubscribes(t *testing.T) {
 	data, err := json.Marshal(pyld)
 	checkErr(err)
 
-	err = json.NewEncoder(buff).Encode(data)
-	checkErr(err)
+	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", bytes.NewBuffer(data))
 
-	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
-
-	var arr Result
+	var result map[int][]string
 
 	// Read the result
 	defer res.Body.Close()
@@ -122,50 +112,43 @@ func TestNewUnsubscribes(t *testing.T) {
 	checkErr(err)
 
 	// converts the decoded result back to a Result struct
-	err = json.Unmarshal(body, &arr)
-	checkErr(err)
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		log.Printf("Error: Unable to unmarshal the request body. %v\n", err.Error())
+	}
 
-	fmt.Printf("%d ID:Email pairs returned == 0 ID:Email pairs expected\n", len(arr.Trues))
-	assert.True(t, len(arr.Trues) == 0)
+	fmt.Printf("%d ID:Email pairs returned == 0 ID:Email pairs expected\n", len(result))
+	assert.True(t, len(result) == 0)
 
 	// Insert the true values into the database
 	dao.Insert(dataSet)
 
 	// Update the bloom filter bit array
 	_, err = http.Get(updateEndpoint)
-	checkErr(err)
-	err = json.NewEncoder(buff).Encode(data)
-	checkErr(err)
+	if err != nil {
+		log.Printf("Error: Unable to update bit array. %v\n", err.Error())
+	}
 
-	res, _ = http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
+	res, _ = http.Post(membershipEndpoint, "application/json; charset=utf-8", bytes.NewBuffer(data))
 
 	body, err = ioutil.ReadAll(res.Body)
 	checkErr(err)
 
-	var arr2 Result
+	var result2 map[int][]string
 	// converts the decoded result back to a Result struct
-	err = json.Unmarshal(body, &arr2)
+	err = json.Unmarshal(body, &result2)
 	checkErr(err)
 
 	// Check again to see if bit array is updated
-	fmt.Printf("%d ID:Email pairs returned == %d ID:Email pairs expected\n", len(arr2.Trues), len(dataSet[0]))
-	assert.True(t, len(arr2.Trues) == len(dataSet[0]))
+	fmt.Printf("%d ID:Email pairs returned == %d ID:Email pairs expected\n", len(result2[0]), len(dataSet[0]))
+	assert.True(t, len(result2[0]) == len(dataSet[0]))
 }
-*/
-/*
+
 func TestResubscribed(t *testing.T) {
 	dao := databaseAccessObj.New()
 
 	// Clear tables for clean tests
 	dao.Clear()
-
-	/*
-		1. use dao to grab some data pairs, store in a var
-		2. use dao to remove these pairs from the db
-		3. call BF server to update the bit array
-		4. Run the saved pairs against the BF server and make sure the get an empty array
-*/
-/*
 
 	var allData []string
 	dataSet := bloomDataGenerator.GenData(1, 1000, 2000)
@@ -189,30 +172,24 @@ func TestResubscribed(t *testing.T) {
 	_, err = http.Get(updateEndpoint)
 	checkErr(err)
 
-	buff := new(bytes.Buffer)
 	pyld := Payload{0, dataSum[0]}
 
 	data, err := json.Marshal(pyld)
 	checkErr(err)
 
-	err = json.NewEncoder(buff).Encode(data)
-	checkErr(err)
-
 	// get the memberships using yall the data
-	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
+	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", bytes.NewBuffer(data))
 
 	body, err := ioutil.ReadAll(res.Body)
 	checkErr(err)
 
-	var arr Result
+	var result map[int][]string
 	// converts the decoded result back to a Result struct
-	err = json.Unmarshal(body, &arr)
-	checkErr(err)
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		log.Printf("Unable to unmarshal result body. %v", err.Error())
+	}
 
-	fmt.Printf("%d total ID:Email pairs != %d ID:Email pairs returned\n", len(dataSum[0]), len(arr.Trues))
-	assert.False(t, len(dataSum[0]) == len(arr.Trues))
-
-	// Grab some of these data from the database
-
+	fmt.Printf("%d total ID:Email pairs != %d ID:Email pairs returned\n", len(dataSum[0]), len(result[0]))
+	assert.False(t, len(dataSum[0]) == len(result[0]))
 }
-*/

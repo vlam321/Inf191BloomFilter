@@ -184,9 +184,9 @@ func main() {
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
 	go updateBloomFilterBackground()
-	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
+	// http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
-	http.HandleFunc("/unsub", handleTFilterUnsubscribed)
+	http.HandleFunc("/filterUnsubscribed", handleTFilterUnsubscribed)
 	http.ListenAndServe(":9090", nil)
 }
