@@ -18,8 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const dsn = "bloom:test@/unsubscribed"
-const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
+const membershipEndpoint = "http://localhost:9090/unsub"
 const updateEndpoint = "http://localhost:9090/update"
 
 type Payload struct {
@@ -38,13 +37,13 @@ type Result struct {
 }
 
 func TestUnsub(t *testing.T) {
-	dao := databaseAccessObj.New(dsn)
+	dao := databaseAccessObj.New()
 	// Clear out values in table
 	dao.Clear()
 
 	var dataSum []string
-	buff := new(bytes.Buffer)
-	var payload Payload
+	// buff := new(bytes.Buffer)
+	var pyld Payload
 
 	// Generate random id_email pairs (positives) and save it in a var
 	// Increasing these values may produce false positives
@@ -66,37 +65,38 @@ func TestUnsub(t *testing.T) {
 	}
 
 	fmt.Println("Total ID:Email pairs inserted: ", len(dataSum))
-	// Put values into payload to be sent to the server later
-	payload = Payload{0, dataSum}
+	// Put values into Payload to be sent to the server later
+	pyld = Payload{0, dataSum}
 
 	// Convert to json
-	data, err := json.Marshal(payload)
+	data, err := json.Marshal(pyld)
 	checkErr(err)
 
 	// Encode to bytes buffer
-	err = json.NewEncoder(buff).Encode(data)
-	checkErr(err)
+	// err = json.NewEncoder(buff).Encode(data)
+	// checkErr(err)
 
-	// Request for members that exist in DB
-	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", buff)
+	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", bytes.NewBuffer(data))
 
-	var arr Result
-
+	// Request for members that exist in D
 	// Read the result
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 
+	var result map[int][]string
+
 	// converts the decoded result back to a Result struct
-	err = json.Unmarshal(body, &arr)
+	err = json.Unmarshal(body, &result)
 	checkErr(err)
 
-	fmt.Printf("%d ID:Email pairs returned == %d ID:Email pairs expected\n", len(arr.Trues), len(inDB[0]))
+	fmt.Printf("%d ID:Email pairs returned == %d ID:Email pairs expected\n", len(result[0]), len(inDB[0]))
 	// checks that only values in DB are returned
-	assert.True(t, len(arr.Trues) == len(inDB[0]))
+	assert.True(t, len(result[0]) == len(inDB[0]))
 }
 
+/*
 func TestNewUnsubscribes(t *testing.T) {
-	dao := databaseAccessObj.New(dsn)
+	dao := databaseAccessObj.New()
 	// Clear values in tables for clean test
 	dao.Clear()
 
@@ -104,9 +104,9 @@ func TestNewUnsubscribes(t *testing.T) {
 
 	// Increasing these values may produce false positives
 	dataSet := bloomDataGenerator.GenData(1, 1000, 2000)
-	payload := Payload{0, dataSet[0]}
+	pyld := Payload{0, dataSet[0]}
 
-	data, err := json.Marshal(payload)
+	data, err := json.Marshal(pyld)
 	checkErr(err)
 
 	err = json.NewEncoder(buff).Encode(data)
@@ -151,9 +151,10 @@ func TestNewUnsubscribes(t *testing.T) {
 	fmt.Printf("%d ID:Email pairs returned == %d ID:Email pairs expected\n", len(arr2.Trues), len(dataSet[0]))
 	assert.True(t, len(arr2.Trues) == len(dataSet[0]))
 }
-
+*/
+/*
 func TestResubscribed(t *testing.T) {
-	dao := databaseAccessObj.New(dsn)
+	dao := databaseAccessObj.New()
 
 	// Clear tables for clean tests
 	dao.Clear()
@@ -163,7 +164,8 @@ func TestResubscribed(t *testing.T) {
 		2. use dao to remove these pairs from the db
 		3. call BF server to update the bit array
 		4. Run the saved pairs against the BF server and make sure the get an empty array
-	*/
+*/
+/*
 
 	var allData []string
 	dataSet := bloomDataGenerator.GenData(1, 1000, 2000)
@@ -188,9 +190,9 @@ func TestResubscribed(t *testing.T) {
 	checkErr(err)
 
 	buff := new(bytes.Buffer)
-	payload := Payload{0, dataSum[0]}
+	pyld := Payload{0, dataSum[0]}
 
-	data, err := json.Marshal(payload)
+	data, err := json.Marshal(pyld)
 	checkErr(err)
 
 	err = json.NewEncoder(buff).Encode(data)
@@ -213,3 +215,4 @@ func TestResubscribed(t *testing.T) {
 	// Grab some of these data from the database
 
 }
+*/

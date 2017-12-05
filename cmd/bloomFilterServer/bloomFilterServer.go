@@ -17,6 +17,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -30,7 +31,7 @@ import (
 	metrics "github.com/rcrowley/go-metrics"
 )
 
-type payload struct {
+type Payload struct {
 	UserId int
 	Emails []string
 }
@@ -79,7 +80,7 @@ func handleMetric(w http.ResponseWriter, r *http.Request) {
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	var buff []byte
-	var payload payload
+	var payload Payload
 
 	//Result struct made to carry the result of unsuscribed emails
 	type Result struct {
@@ -98,33 +99,61 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		// return
 	}
 
-	// converts the decoded result to a payload struct
+	// converts the decoded result to a Payload struct
 	err = json.Unmarshal(buff, &payload)
 	if err != nil {
 		log.Printf("error unmashaling payload %v %s\n", err, string(buff))
 		return
 	}
 	/*
-	var emailInputs []string
-	for i := range payload.Emails {
-		emailInputs = append(emailInputs, strconv.Itoa(payload.UserId)+"_"+payload.Emails[i])
-	}
+		var emailInputs []string
+		for i := range payload.Emails {
+			emailInputs = append(emailInputs, strconv.Itoa(payload.UserId)+"_"+payload.Emails[i])
+		}
 	*/
 
 	//uses bloomManager to get the result of unsubscribed emails
 	//puts them in struct, result
-	emails := bf.GetArrayOfUnsubscribedEmails(map[int][]string{payload.UserId:payload.Emails})
+	emails := bf.GetArrayOfUnsubscribedEmails(map[int][]string{payload.UserId: payload.Emails})
 	// filteredEmails := Result{emails}
 
 	//convert result to json
 	js, err := json.Marshal(emails)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error marshaling filteredEmails: %v\n", err)
 		return
 	}
 
 	//write back to client
 	w.Write(js)
+}
+
+func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error: Unable to read request data. %v\n", err.Error())
+		return
+	}
+
+	var pyld Payload
+	err = json.Unmarshal(bytes, &pyld)
+	if err != nil {
+		log.Printf("Error: Unable to unmarshal Payload. %v\n", err.Error())
+		return
+	}
+
+	//uses bloomManager to get the result of unsubscribed emails
+	//puts them in struct, result
+	filteredResults := bf.GetArrayOfUnsubscribedEmails(map[int][]string{pyld.UserId: pyld.Emails})
+
+	jsn, err := json.Marshal(filteredResults)
+	if err != nil {
+		log.Printf("Error marshaling filtered emails. %v\n", err.Error())
+		return
+	}
+
+	//write back to client
+	w.Write(jsn)
 }
 
 //updateBloomFilterBackground manages the periodic updates of the bloom
@@ -158,6 +187,6 @@ func main() {
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
-
+	http.HandleFunc("/unsub", handleTFilterUnsubscribed)
 	http.ListenAndServe(":9090", nil)
 }
