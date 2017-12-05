@@ -270,37 +270,6 @@ func (conn *Conn) SelectTable(tableNum int) map[int][]string {
 	return result
 }
 
-// InsertLegacy old version of insert
-/*
-func (update *Update) InsertLegacy(dataSet map[int][]string) {
-	// Takes (int, string[])map of data and inserts
-	// listed items into database
-	db := update.db
-	shardMap := make(map[int][]Pair)
-	for userid, emails := range dataSet {
-		shardMap[modId(userid)] = append(shardMap[modId(userid)], Pair{userid, emails})
-	}
-	for tabNum, pairs := range shardMap {
-		tableName := "unsub_" + strconv.Itoa(tabNum)
-		sqlStr := "INSERT INTO " + tableName + "(user_id, email, ts) VALUES "
-		var vals []interface{}
-		counter := 0
-		for p := range pairs {
-			for e := range pairs[p].emails {
-				sqlStr += "(?, ?, CURRENT_TIMESTAMP), "
-				vals = append(vals, pairs[p].id, pairs[p].emails[e])
-				counter += 1
-			}
-		}
-		sqlStr = sqlStr[0 : len(sqlStr)-2]
-		stmt, err := db.Prepare(sqlStr)
-		checkErr(err)
-		_, err = stmt.Exec(vals...)
-		checkErr(err)
-	}
-}
-*/
-
 // Insert inserts dataSet into db
 func (conn *Conn) Insert(dataSet map[int][]string) {
 	db := conn.db
@@ -417,6 +386,26 @@ func (conn *Conn) Delete(dataSet map[int][]string) {
 			return
 		}
 	}
+}
+
+// Get the size or number of rows of the table
+func (conn *Conn) GetTableSize(tableNum int) int {
+	db := conn.db
+	sqlStr := "SELECT COUNT(*) FROM unsub_" + strconv.Itoa(tableNum) + ";"
+	rows, err := db.Query(sqlStr)
+	if err != nil {
+		log.Printf("Error: Unable to query count. %v\n", err.Error())
+	}
+	defer rows.Close()
+
+	var count int
+	for rows.Next() {
+		err = rows.Scan(&count)
+		if err != nil {
+			log.Printf("Error: Unable to scan row counts %v\n", err.Error())
+		}
+	}
+	return count
 }
 
 // Clear removes ALL rows from ALL tables in db

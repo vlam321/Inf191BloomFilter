@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"Inf191BloomFilter/bloomManager"
+	"Inf191BloomFilter/databaseAccessObj"
 
 	"github.com/cyberdelia/go-metrics-graphite"
 	metrics "github.com/rcrowley/go-metrics"
@@ -153,18 +154,20 @@ func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	metrics.GetOrRegisterCounter("request.numreq", nil).Inc(1)
 	//write back to client
 	w.Write(jsn)
 }
 
 //updateBloomFilterBackground manages the periodic updates of the bloom
 //filter. Update calls repopulate, creating a new updated bloom filter
-func updateBloomFilterBackground() {
+func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 	//Set new ticker to every 2 seconds
-	ticker := time.NewTicker(time.Second * 10)
+	ticker := time.NewTicker(time.Second * 20)
 
 	for t := range ticker.C {
 		//Call update bloom filter
+		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(0)))
 		bf.RepopulateBloomFilter()
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
@@ -181,13 +184,14 @@ func main() {
 	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
 	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
 	bf.RepopulateBloomFilter()
-
+	dao := databaseAccessObj.New()
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
-	go updateBloomFilterBackground()
+	go updateBloomFilterBackground(dao)
 	// http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
 	http.HandleFunc("/filterUnsubscribed", handleTFilterUnsubscribed)
 	http.ListenAndServe(":9090", nil)
+	dao.CloseConnection()
 }
