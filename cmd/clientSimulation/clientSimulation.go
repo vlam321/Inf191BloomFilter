@@ -32,6 +32,33 @@ func conv2Json(payload Payload) []byte {
 	return data
 }
 
+func makeMap(emails []string) map[string]bool {
+	quickMap := make(map[string]bool)
+	for i := range emails {
+		quickMap[emails[i]] = true
+	}
+	return quickMap
+}
+
+// checkResult takes in the expected and actual values and
+// calculate the hit and miss ratio and sends the data to
+// graphite
+func checkResult(unsubbed, subbed, res map[int][]string) {
+	unsubbedMap := makeMap(unsubbed[0])
+	subbedMap := makeMap(subbed[0])
+	hit := 0
+	miss := 0
+	for i := range res[0] {
+		if ok := (unsubbedMap[res[0][i]] && !subbedMap[res[0][i]]); ok {
+			hit += 1
+		} else {
+			miss += 1
+		}
+	}
+	metrics.GetOrRegisterGauge("request.hit", nil).Update(int64(hit))
+	metrics.GetOrRegisterGauge("request.miss", nil).Update(int64(miss))
+}
+
 func attackBloomFilter(dao *databaseAccessObj.Conn) {
 	unsubbed := dao.SelectRandSubset(0, 1000)
 	subbed := bloomDataGenerator.GenData(1, 100, 200)
@@ -58,7 +85,7 @@ func attackBloomFilter(dao *databaseAccessObj.Conn) {
 		log.Printf("Error unmarshaling body: %v\n", err)
 		return
 	}
-	log.Printf("Success: %d emails returned\n", len(result[0]))
+	checkResult(unsubbed, subbed, result)
 }
 
 func sendRequest(dao *databaseAccessObj.Conn, ms int32) {
