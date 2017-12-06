@@ -107,13 +107,9 @@ func (conn *Conn) SelectRandSubset(tblNum, size int) map[int][]string {
 	db := conn.db
 	result := make(map[int][]string)
 
-	stmt, err := db.Prepare("SELECT user_id, email FROM unsub_" + strconv.Itoa(tblNum) + " ORDER BY RAND() LIMIT ?;")
-	if err != nil {
-		log.Printf("Error preparing statement: %v\n", err)
-		return nil
-	}
+	sqlStr := "SELECT user_id, email FROM unsub_" + strconv.Itoa(tblNum) + " ORDER BY RAND() LIMIT ?"
 
-	rows, err := stmt.Query(strconv.Itoa(size))
+	rows, err := db.Query(sqlStr, strconv.Itoa(size))
 	if err != nil {
 		log.Printf("Error query: %v\n", err)
 		return nil
@@ -133,67 +129,7 @@ func (conn *Conn) SelectRandSubset(tblNum, size int) map[int][]string {
 	return result
 }
 
-// SelectLegacy old version of select; error when more than 65535 placeholders
-/*
-func (conn *Conn) SelectLegacy(dataSet map[int][]string) map[int][]string {
-	// Return items that exist both in input dataSet and database
-	db := update.db
-	result := make(map[int][]string)
-	for userid, emails := range dataSet {
-		tableName := "unsub_" + strconv.Itoa(modId(userid))
-		sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = " + strconv.Itoa(userid) + " AND ("
-		var vals []interface{}
-		for i := range emails {
-			sqlStr += "email = ? OR "
-			vals = append(vals, dataSet[userid][i])
-		}
-		sqlStr = sqlStr[0 : len(sqlStr)-4]
-		sqlStr += ")"
-		rows, err := db.Query(sqlStr, vals...)
-		if err == sql.ErrNoRows {
-			continue
-		}
-		checkErr(err)
-
-		for rows.Next() {
-			var user_id int
-			var email string
-			err = rows.Scan(&user_id, &email)
-			checkErr(err)
-			result[user_id] = append(result[user_id], email)
-		}
-	}
-	return result
-}
-*/
-
-// SelectByShard alternative select function; not complete
-/*
-func (update *Update) SelectByShard(dataSet map[int][]string) map[int][]string{
-	//db := update.db
-	result := make(map[int][]string)
-	shardMap := make(map[int][]Pair)
-	for userid, emails := range dataSet {
-		shardMap[modId(userid)] = append(shardMap[modId(userid)], Pair{userid, emails})
-	}
-	int pairFlag = 0;
-	int emailFlag = 0;
-	int counter = 0;
-	for shardNum := range shardMap{
-		sqlStr := "SELECT user_id, email FROM unsub_" + shardNum + "WHERE "
-		for p := range pairs{
-			for e := range pairs[p].emails{
-				while(counter < 32000){
-					sqlStr += "(user_id = ? AND email = ?) OR "
-					counter += 2
-				}
-			}
-		}
-	}
-	return result
-}
-*/
-
+// Select returns data from db matching data in dataSet
 func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 	db := conn.db
 	result := make(map[int][]string)

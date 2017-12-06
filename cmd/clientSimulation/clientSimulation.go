@@ -32,6 +32,7 @@ func conv2Json(payload Payload) []byte {
 	return data
 }
 
+// attackBloomFilter hit endpoint with test data 
 func attackBloomFilter(dao *databaseAccessObj.Conn) {
 	unsubbed := dao.SelectRandSubset(0, 1000)
 	subbed := bloomDataGenerator.GenData(1, 100, 200)
@@ -61,8 +62,9 @@ func attackBloomFilter(dao *databaseAccessObj.Conn) {
 	log.Printf("Success: %d emails returned\n", len(result[0]))
 }
 
+// sendRequest attackBloomFilter every ms
 func sendRequest(dao *databaseAccessObj.Conn, ms int32) {
-	ticker := time.NewTicker(time.Millisecond * time.Duration(ms))
+	ticker := time.NewTicker(time.Duration(ms)*time.Millisecond)
 	for _ = range ticker.C {
 		attackBloomFilter(dao)
 	}
@@ -73,6 +75,6 @@ func main() {
 	defer dao.CloseConnection()
 	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
-	go sendRequest(dao, 500)
+	go sendRequest(dao, 1000)
 	http.ListenAndServe(":9091", nil)
 }

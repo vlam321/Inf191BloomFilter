@@ -1,14 +1,4 @@
-/* Primary script for running unit tests for the databaseAccessObj.
-For running all the test cases, use the following command:
-
-	go test databaseAccessObj_test.go databaseAccessObj.go
-
-The above command will not show any print statements or
-detail about specific tests. If you want to see those, use the -v flag,
-like so:
-
-	go test -v databaseAccessObj_test.go databaseAccessObj.go
-*/
+// Primary script for running unit tests for the databaseAccessObj.
 
 package databaseAccessObj
 

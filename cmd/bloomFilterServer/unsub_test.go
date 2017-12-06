@@ -22,10 +22,12 @@ import (
 const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
 const updateEndpoint = "http://localhost:9090/update"
 
+/*
 type Payload struct {
 	UserId int
 	Emails []string
 }
+*/
 
 func checkErr(err error) {
 	if err != nil {
