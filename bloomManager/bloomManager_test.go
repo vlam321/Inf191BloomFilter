@@ -9,56 +9,14 @@ import (
 )
 
 const bitArraySize = 100000
-const numHash = 5
-
-/*
-func TestUpdateBloomFilter(t *testing.T) {
-	// testing initial population of bloom filter
-	bf := New(bitArraySize,numHash)
-	db := databaseAccessObj.New()
-	databaseTestMap := make(map[int][]string)
-	databaseTestMap[0] := []string{"test1@uci.edu", "test2@uci.edu", "test3@uci.edu"}
-
-	// clean out database of test emails
-	db.Delete(databaseTestMap)
-	db.Insert(databaseTestMap)
-	bf.UpdateBloomFilter()
-	assert.Equal(t, true, bf.bloomFilter.TestString("0_test1@uci.edu"))
-	assert.Equal(t, true, bf.bloomFilter.TestString("0_test2@uci.edu"))
-	assert.Equal(t, false, bf.bloomFilter.TestString("0_test0@gmail.com"))
-	assert.Equal(t, true, bf.bloomFilter.TestString("0_test3@uci.edu"))
-	db.Delete(databaseTestMap)
-	db.CloseConnection()
-}
-*/
-
-/*
-func TestUpdateBloomFilter2(t *testing.T) {
-	// testing update bloom filter
-	bf := New()
-	db := databaseAccessObj.New("bloom:test@/unsubscribed")
-	arrayOfEmails := []string{"catlover@uci.edu", "snowcone3@uci.edu"}
-	databaseTestMap := make(map[int][]string)
-	databaseTestMap[0] = arrayOfEmails
-	// clean out database of test emails
-	db.Delete(databaseTestMap)
-	bf.UpdateBloomFilter()
-	assert.Equal(t, false, bf.bloomFilter.TestString("0_catlover@uci.edu"))
-	assert.Equal(t, false, bf.bloomFilter.TestString("0_snowcone3@uci.edu"))
-	db.Insert(databaseTestMap)
-	bf.UpdateBloomFilter()
-	assert.Equal(t, true, bf.bloomFilter.TestString("0_catlover@uci.edu"))
-	assert.Equal(t, true, bf.bloomFilter.TestString("0_snowcone3@uci.edu"))
-	db.Delete(databaseTestMap)
-	db.CloseConnection()
-}
-*/
+const numHash = 10
 
 func TestRepopulateBloomFilter(t *testing.T) {
 	// testing repopulating bloom filter
 	bf := New(bitArraySize, numHash)
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
+	db.Clear()
 	arrayOfEmails := []string{"ilovepadthai@gmail.com", "eatmyshorts@yahoo.com"}
 	databaseTestMap := make(map[int][]string)
 	databaseTestMap[0] = arrayOfEmails
@@ -89,16 +47,15 @@ func TestGetArrayOfUnsubscribedEmails(t *testing.T) {
 	bf := New(bitArraySize, numHash)
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
+	db.Clear()
 	arrayOfEmails2 := []string{"friedchicken@gmail.com", "chocolatebar@yahoo.com"}
 	databaseTestMap := make(map[int][]string)
 	databaseTestMap[0] = arrayOfEmails2
-	// clean out database of test emails
-	db.Delete(databaseTestMap)
 	db.Insert(databaseTestMap)
 	bf.RepopulateBloomFilter()
 	emailToCheck := bf.GetArrayOfUnsubscribedEmails(testMap)
 	assert.Equal(t, 2, len(emailToCheck[0]))
-	assert.Equal(t, "friedchicken@gmail.com", emailToCheck[0][1])
-	assert.Equal(t, "chocolatebar@yahoo.com", emailToCheck[0][0])
+	assert.Equal(t, arrayOfEmails2[0], emailToCheck[0][0])
+	assert.Equal(t, arrayOfEmails2[1], emailToCheck[0][1])
 	db.Delete(databaseTestMap)
 }
