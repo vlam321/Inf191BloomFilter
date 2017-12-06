@@ -163,7 +163,7 @@ func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 //filter. Update calls repopulate, creating a new updated bloom filter
 func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 	//Set new ticker to every 2 seconds
-	ticker := time.NewTicker(time.Second * 20)
+	ticker := time.NewTicker(time.Second * 3)
 
 	for t := range ticker.C {
 		//Call update bloom filter
@@ -173,6 +173,7 @@ func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 	}
 }
 
+// setBloomFilter initialize bloom filter
 func setBloomFilter(bitArraySize, numHashFunc uint) {
 	bf = bloomManager.New(bitArraySize, numHashFunc)
 }

@@ -1,6 +1,8 @@
 package main // probably need to convert this to a proper go test
 
 import (
+	"log"
+	"time"
 	"flag"
 	"fmt"
 	"os"
@@ -17,6 +19,8 @@ type UserInputs struct {
 	maxEmail int
 	tableNum int
 	numEmail int
+	avgEmails int
+	interval int
 }
 
 const unsub_schema = `(user_id int(11), email varchar(255), ts timestamp default current_timestamp, primary key (user_id, email));`
@@ -32,49 +36,65 @@ func getCommandLineInputs() UserInputs {
 		(can optionally specify number of users, mininum and maximum emails per user)
 	add: Create new dataset and add it to the database
 		(can optionally specify number of users, mininum and maximum emails per user)
+	del: Delete dataset from database
+	auto: automatically insert data into database
+		(can optionally specify number of emails to insert and interval between inserts (in ms))
 	`)
 	userPtr := flag.Int("numUser", 1, "Possible inputs: integers > 0")
 	minEmailPtr := flag.Int("minEmail", 1, "Possible inputs: integer > 0")
 	maxEmailPtr := flag.Int("maxEmail", 2, "Possible inputs: integer > minEmail")
 	tableNumPtr := flag.Int("tableNum", 0, "Possible inputs: 0-14")
 	numEmailPtr := flag.Int("numEmail", 0, "Possible inputs: >= 0")
+	avgEmailsPtr := flag.Int("avgEmails", 1, "Possible inputs: >= 0")
+	intervalPtr := flag.Int("interval", 1, "Possible inputs:")
 	flag.Parse()
-	return UserInputs{*cmdPtr, *userPtr, *minEmailPtr, *maxEmailPtr, *tableNumPtr, *numEmailPtr}
+	return UserInputs{*cmdPtr, *userPtr, *minEmailPtr, *maxEmailPtr, *tableNumPtr, *numEmailPtr, *avgEmailsPtr, *intervalPtr}
 }
 
 // handleRepopulate clears database and populates with random data based on input
 func handleRepopulate(numUser, minEmail, maxEmail int) {
 	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
 	dao.Clear()
 	dataset := bloomDataGenerator.GenData(numUser, minEmail, maxEmail)
 	dao.Insert(dataset)
-	dao.CloseConnection()
 }
 
 // handleAdd adds random data based on input to db
 func handleAdd(numUser, minEmail, maxEmail int) {
 	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
 	dataset := bloomDataGenerator.GenData(numUser, minEmail, maxEmail)
 	dao.Insert(dataset)
-	dao.CloseConnection()
 }
 
 // handleDelete takes a table number and a number of rows and remove them from the db
 func handleDel(tableNum, numEmail int) {
 	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
 	dao.Delete(dao.SelectRandSubset(tableNum, numEmail))
-	dao.CloseConnection()
 }
 
 // handleMakeTable creates all tables necessary in db
 func handleMakeTable() {
 	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
 	for i := 0; i < 15; i++ {
 		tablename := "unsub_" + strconv.Itoa(i)
 		dao.MakeTable(tablename, unsub_schema)
 	}
 	dao.MakeTable("test_results", test_result_schema)
-	dao.CloseConnection()
+}
+
+// autoUpdate updates database based on time input
+func handleAuto(avgEmails int, interval int){
+	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
+	ticker := time.NewTicker(time.Duration(interval)*time.Millisecond)
+	for _ = range ticker.C{
+		log.Printf("Inserting %d emails into database", avgEmails)
+		dao.Insert(bloomDataGenerator.GenData(1, avgEmails, avgEmails+1))
+	}
 }
 
 func main() {
@@ -96,6 +116,8 @@ func main() {
 		case "del":
 			handleDel(userInputs.tableNum, userInputs.numEmail)
 			fmt.Printf("Done. \n")
+		case "auto":
+			handleAuto(userInputs.avgEmails, userInputs.interval)
 		default:
 			fmt.Fprintf(os.Stderr, "Error: invalid command.\n")
 			flag.PrintDefaults()
