@@ -55,15 +55,17 @@ func checkResult(unsubbed, subbed, res map[int][]string) {
 			miss += 1
 		}
 	}
+	if len(unsubbedMap) > len(res[0]) {
+		miss += len(unsubbedMap) - len(res[0])
+	}
 	metrics.GetOrRegisterGauge("request.hit", nil).Update(int64(hit))
 	metrics.GetOrRegisterGauge("request.miss", nil).Update(int64(miss))
 }
 
 // attackBloomFilter hit endpoint with test data
-func attackBloomFilter(dao *databaseAccessObj.Conn) {
-	unsubbed := dao.SelectRandSubset(0, 1000)
-	subbed := bloomDataGenerator.GenData(1, 100, 200)
-
+func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse int) {
+	unsubbed := dao.SelectRandSubset(0, expectedTrues)
+	subbed := bloomDataGenerator.GenData(1, expectedFalse, expectedFalse+501)
 	var dataSum []string
 	dataSum = append(dataSum, unsubbed[0]...)
 	dataSum = append(dataSum, subbed[0]...)
@@ -80,6 +82,8 @@ func attackBloomFilter(dao *databaseAccessObj.Conn) {
 		return
 	}
 
+	log.Printf("Sent request to filter with payload size of %d emails (expected reponse size = %d emails).", len(dataSum), expectedTrues)
+
 	var result map[int][]string
 	err = json.Unmarshal(body, &result)
 	if err != nil {
@@ -93,7 +97,7 @@ func attackBloomFilter(dao *databaseAccessObj.Conn) {
 func sendRequest(dao *databaseAccessObj.Conn, ms int32) {
 	ticker := time.NewTicker(time.Duration(ms) * time.Millisecond)
 	for _ = range ticker.C {
-		attackBloomFilter(dao)
+		attackBloomFilter(dao, 2000, 500)
 	}
 }
 
