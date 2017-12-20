@@ -140,8 +140,10 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 			var user_id int
 			var email string
 			sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = ? and email = ?"
-			db.QueryRow(sqlStr, userid, emails[e]).Scan(&user_id, &email)
-			result[user_id] = append(result[user_id], email)
+			err := db.QueryRow(sqlStr, userid, emails[e]).Scan(&user_id, &email)
+			if err == nil {
+				result[user_id] = append(result[user_id], email)
+			}
 		}
 	}
 	return result
