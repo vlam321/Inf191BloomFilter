@@ -146,7 +146,7 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 		for e := range emails{
 			var user_id int
 			var email string
-
+      
 			err = stmt.QueryRow(userid, emails[e]).Scan(&user_id, &email)
 			if(err != nil){
 				if(err == sql.ErrNoRows){
