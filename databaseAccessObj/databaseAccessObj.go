@@ -129,32 +129,8 @@ func (conn *Conn) SelectRandSubset(tblNum, size int) map[int][]string {
 	return result
 }
 
-func (conn *Conn) Select2(dataSet map[int][]string) map[int][]string {
-	db := conn.db
-	result := make(map[int][]string)
-
-	for userid, emails := range dataSet {
-		tableName := "unsub_" + strconv.Itoa(modId(userid))
-		sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = ? and email = ?"
-		for e := range emails{
-			var user_id int
-			var email string
-			err := db.QueryRow(sqlStr, userid, emails[e]).Scan(&user_id, &email)
-			if(err != nil){
-				if(err == sql.ErrNoRows){
-					continue
-				}else{
-					log.Printf("Error querying row", err)
-					return nil
-				}
-			}
-			result[user_id] = append(result[user_id], email)
-		}
-	}
-	return result
-}
-
-func (conn *Conn) Select3(dataSet map[int][]string) map[int][]string {
+// Select returns items in database matching input dataSet 
+func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 	db := conn.db
 	result := make(map[int][]string)
 
@@ -172,32 +148,6 @@ func (conn *Conn) Select3(dataSet map[int][]string) map[int][]string {
 			var email string
 
 			err = stmt.QueryRow(userid, emails[e]).Scan(&user_id, &email)
-			if(err != nil){
-				if(err == sql.ErrNoRows){
-					continue
-				}else{
-					log.Printf("Error querying row", err)
-					return nil
-				}
-			}
-			result[user_id] = append(result[user_id], email)
-		}
-	}
-	return result
-}
-
-// Select returns data from db matching data in dataSet
-func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
-	db := conn.db
-	result := make(map[int][]string)
-
-	for userid, emails := range dataSet {
-		tableName := "unsub_" + strconv.Itoa(modId(userid))
-		for e := range emails {
-			var user_id int
-			var email string
-			sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = ? and email = ?"
-			err := db.QueryRow(sqlStr, userid, emails[e]).Scan(&user_id, &email)
 			if(err != nil){
 				if(err == sql.ErrNoRows){
 					continue
