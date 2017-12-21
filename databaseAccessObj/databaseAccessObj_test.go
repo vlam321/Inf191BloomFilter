@@ -11,21 +11,22 @@ import (
 
 func TestConnection(t *testing.T) {
 	db := New()
-	db.CloseConnection()
+	defer db.CloseConnection()
 }
 
 func TestHasTable(t *testing.T) {
 	db := New()
+	defer db.CloseConnection()
 	db.Clear()
 	assert.True(t, db.hasTable("unsubscribed", "unsub_0"))
 	assert.False(t, db.hasTable("unsubscribed", "nothere"))
 	assert.False(t, db.hasTable("unsubscribed", "nothereeither"))
 	assert.False(t, db.hasTable("unsubscribed", "nope"))
-	db.CloseConnection()
 }
 
 func TestInsertAndSelect(t *testing.T) {
 	db := New()
+	defer db.CloseConnection()
 	db.Clear()
 	testData := make(map[int][]string)
 	testData[0] = []string{"a", "b", "c"}
@@ -33,11 +34,22 @@ func TestInsertAndSelect(t *testing.T) {
 	db.Insert(testData)
 	result := db.Select(testData)
 	assert.Equal(t, testData, result)
-	db.CloseConnection()
+}
+
+func TestSelectRandSubset(t *testing.T) {
+	db := New()
+	defer db.CloseConnection()
+	db.Clear()
+	testData := make(map[int][]string)
+	testData[0] = [] string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"}
+	db.Insert(testData)
+	result := db.SelectRandSubset(0, 4)
+	assert.Equal(t, 4, len(result[0]))
 }
 
 func TestSelectTable(t *testing.T) {
 	db := New()
+	defer db.CloseConnection()
 	db.Clear()
 	testData := make(map[int][]string)
 	testData[3] = []string{"h", "i", "j"}
@@ -53,11 +65,11 @@ func TestSelectTable(t *testing.T) {
 	assert.Equal(t, testDataShard3, result)
 	result = db.SelectTable(8)
 	assert.Equal(t, testDataShard8, result)
-	db.CloseConnection()
 }
 
 func TestSelectByTimestamp(t *testing.T) {
 	db := New()
+	defer db.CloseConnection()
 	db.Clear()
 	testData := make(map[int][]string)
 	testData[6] = []string{"t", "u", "v", "w"}
@@ -70,5 +82,5 @@ func TestSelectByTimestamp(t *testing.T) {
 	db.Insert(testData2)
 	result := db.SelectByTimestamp(ts)
 	assert.Equal(t, testData2, result)
-	db.CloseConnection()
 }
+
