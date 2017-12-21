@@ -58,8 +58,8 @@ func checkResult(unsubbed, subbed, res map[int][]string) {
 	if len(unsubbedMap) > len(res[0]) {
 		miss += len(unsubbedMap) - len(res[0])
 	}
-	metrics.GetOrRegisterGauge("request.hit", nil).Update(int64(hit))
-	metrics.GetOrRegisterGauge("request.miss", nil).Update(int64(miss))
+	metrics.GetOrRegisterGauge("result.hit", nil).Update(int64(hit))
+	metrics.GetOrRegisterGauge("result.miss", nil).Update(int64(miss))
 }
 
 // attackBloomFilter hit endpoint with test data
@@ -90,6 +90,9 @@ func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse
 		log.Printf("Error unmarshaling body: %v\n", err)
 		return
 	}
+	metrics.GetOrRegisterGauge("request.hit", nil).Update(int64(len(result[0])))
+	metrics.GetOrRegisterGauge("request.miss", nil).Update(int64(len(dataSum) - len(result[0])))
+
 	checkResult(unsubbed, subbed, result)
 }
 
@@ -106,6 +109,6 @@ func main() {
 	defer dao.CloseConnection()
 	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
-	go sendRequest(dao, 1000)
+	go sendRequest(dao, 2000)
 	http.ListenAndServe(":9091", nil)
 }

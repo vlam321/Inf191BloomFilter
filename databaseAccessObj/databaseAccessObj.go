@@ -146,6 +146,7 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 		for e := range emails{
 			var user_id int
 			var email string
+<<<<<<< HEAD
 
 			err = stmt.QueryRow(userid, emails[e]).Scan(&user_id, &email)
 			if(err != nil){
@@ -157,6 +158,13 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 				}
 			}
 			result[user_id] = append(result[user_id], email)
+=======
+			sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = ? and email = ?"
+			err := db.QueryRow(sqlStr, userid, emails[e]).Scan(&user_id, &email)
+			if err == nil {
+				result[user_id] = append(result[user_id], email)
+			}
+>>>>>>> upstream/develop
 		}
 	}
 	return result
