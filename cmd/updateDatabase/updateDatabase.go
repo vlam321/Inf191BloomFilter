@@ -8,8 +8,8 @@ import (
 	"os"
 	"strconv"
 
-	"Inf191BloomFilter/bloomDataGenerator"
-	"Inf191BloomFilter/databaseAccessObj"
+	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
+	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 )
 
 type UserInputs struct {

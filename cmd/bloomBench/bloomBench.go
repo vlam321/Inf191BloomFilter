@@ -10,9 +10,9 @@ import (
 	"strconv"
 	"testing"
 
-	"Inf191BloomFilter/bloomDataGenerator"
-	"Inf191BloomFilter/bloomManager"
-	"Inf191BloomFilter/databaseAccessObj"
+	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
+	"github.com/vlam321/Inf191BloomFilter/bloomManager"
+	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 )
 
 const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"

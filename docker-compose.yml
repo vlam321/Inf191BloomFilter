@@ -1,0 +1,43 @@
+version: '2'
+services:
+  bloomServer1:
+    image: golang
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 10000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/Inf191BloomFilter
+
+    working_dir: /go/src/github.com/vlam321/Inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9091:9090"
+    
+  bloomServer2:
+    image: golang
+    command: go run ./src/github.com/vlam321/github.com/vlam321/inf191BloomFilter/cmd/bloomFilterServer/bloomFilterServer.go 10000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/github.com/vlam321/inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9092:9090"
+
+  bloomServer3:
+    image: golang
+    command: go run ./src/github.com/vlam321/github.com/vlam321/inf191BloomFilter/cmd/bloomFilterServer/bloomFilterServer.go 10000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/github.com/vlam321/inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9093:9090"
+
+  mysql:
+    hostname: mysql
+    image: percona:5.5
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+    ports:
+      - "3306:3306"

@@ -25,8 +25,8 @@ import (
 	"strconv"
 	"time"
 
-	"Inf191BloomFilter/bloomManager"
-	"Inf191BloomFilter/databaseAccessObj"
+	"github.com/vlam321/Inf191BloomFilter/bloomManager"
+	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 
 	"github.com/cyberdelia/go-metrics-graphite"
 	metrics "github.com/rcrowley/go-metrics"

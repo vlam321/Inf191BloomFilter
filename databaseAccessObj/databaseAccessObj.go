@@ -7,14 +7,15 @@ import (
 	"strconv"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 )
 
 // dbShards number of shards in database
 const dbShards int = 15
 
 // dsn username:password@/database used to login to MySQL db
-const dsn string = "bloom:test@/unsubscribed"
+//const dsn string = "bloom:test@/unsubscribed"
+const dsn string = "root@mysql"
 
 // Update struct that holds db object
 type Conn struct {
@@ -47,7 +48,15 @@ func modId(userid int) int {
 
 // New construct Conn object
 func New() *Conn {
-	db, err := sql.Open("mysql", dsn)
+	cfg := mysql.Config{
+		Addr: "mysql:3306",
+		User: "root",
+		Net: "tcp",
+		DBName: "unsubscribed",
+	}
+
+	log.Println("USING DSN = ", cfg.FormatDSN())
+	db, err := sql.Open("mysql", cfg.FormatDSN())
 
 	if err != nil {
 		log.Printf("Error connecting to database: %v\n", err)
