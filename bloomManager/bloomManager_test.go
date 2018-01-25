@@ -3,7 +3,7 @@ package bloomManager
 import (
 	"testing"
 
-	"Inf191BloomFilter/databaseAccessObj"
+	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 
 	"github.com/stretchr/testify/assert"
 )

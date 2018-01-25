@@ -1,11 +1,11 @@
-# Inf191BloomFilter
+# github.com/vlam321/Inf191BloomFilter
 
 ## About
 This project is a proof of concept. Our problem assumption is that the current system queries userid:email pairs from a giant database. Though this provides an accurate membership result, the network overhead of querying the database is too large. Therefore, we will build a bloom filter to improve data management performance. The current scope will be to integrate and test an existing bloom filter and expand it to a distributed node implementation. We will also build utilities for testing our bloom filter locally. These tools include a data generator and visualization metrics.
 
 ## Contribution
 To start contributing to this project, simply fork this repository and clone it using after replacing "vlam321" with your user name, Like so: 
-`git clone https://github.com/yourGithubUserName/Inf191BloomFilter`
+`git clone https://github.com/yourGithubUserName/github.com/vlam321/Inf191BloomFilter`
 
 ## Dependencies
 The following dependencies will be needed to run some of the files in this repo. Use the commands below to install them if needed.
