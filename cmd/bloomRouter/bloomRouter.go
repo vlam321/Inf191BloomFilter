@@ -19,7 +19,6 @@ type Payload struct {
 type BloomServerIPs struct {
 	BloomFilterServer1 string
 	BloomFilterServer2 string
-	BloomFilterServer3 string
 }
 
 var bloomServerIPs BloomServerIPs

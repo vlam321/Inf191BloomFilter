@@ -16,6 +16,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -25,6 +26,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/spf13/viper"
 	"github.com/vlam321/Inf191BloomFilter/bloomManager"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 
@@ -40,13 +42,15 @@ type Payload struct {
 //The bloom filter for this server
 var bf *bloomManager.BloomFilter
 
+/*
 //handleUpdate will update the respective bloomFilter
 //server will keep track of when the last updated time is. to call
 //update every _ time.
 func handleUpdate(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
-	bf.RepopulateBloomFilter()
+	bf.RepopulateBloomFilter(viper.GetInt(bfIP))
 }
+*/
 
 // handleMetric records metrics (temporary method?)
 func handleMetric(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +83,6 @@ func handleMetric(w http.ResponseWriter, r *http.Request) {
 //handleFilterUnsubscripe handles when the client requests to recieve
 //those emails that are unsubscribed therefore, IN the database.
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	var buff []byte
 	var payload Payload
 
@@ -161,14 +164,14 @@ func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 
 //updateBloomFilterBackground manages the periodic updates of the bloom
 //filter. Update calls repopulate, creating a new updated bloom filter
-func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
+func updateBloomFilterBackground(dao *databaseAccessObj.Conn, bfIP string) {
 	//Set new ticker to every 2 seconds
 	ticker := time.NewTicker(time.Second * 3)
 
 	for t := range ticker.C {
 		//Call update bloom filter
 		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(0)))
-		bf.RepopulateBloomFilter()
+		bf.RepopulateBloomFilter(viper.GetInt(bfIP))
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
 }
@@ -178,19 +181,50 @@ func setBloomFilter(bitArraySize, numHashFunc uint) {
 	bf = bloomManager.New(bitArraySize, numHashFunc)
 }
 
+// Retrieve the IPv4 address of the current AWS EC2 instance
+func getMyIP() (myIP string, err error) {
+	resp, err := http.Get("http://checkip.amazonaws.com/")
+	if err != nil {
+		return "x.x.x.x", errors.New("Unable to find IP.")
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return "x.x.x.x", errors.New("Unable to find IP.")
+	}
+	return string(body[:]), nil
+}
+
+func mapBf2Shard() error {
+	viper.SetConfigName("bf2ShardConf")
+	viper.AddConfigPath("settomgs")
+	err := viper.ReadInConfig()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func main() {
+	bfIP, err := getMyIP()
+	log.Println("BloomFilterIP: %s\n", bfIP)
+	if err != nil {
+		log.Println("BloomFilter: Error retrieve IP address.")
+	}
 	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 	bitArraySize, _ := strconv.ParseUint(os.Args[1], 10, 64)
 	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
 	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
-	bf.RepopulateBloomFilter()
+	// bf.RepopulateBloomFilter()
 	dao := databaseAccessObj.New()
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
-	go updateBloomFilterBackground(dao)
+	go updateBloomFilterBackground(dao, bfIP)
 	// http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
-	http.HandleFunc("/update", handleUpdate)
+	// http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
 	http.HandleFunc("/filterUnsubscribed", handleTFilterUnsubscribed)
 	http.ListenAndServe(":9090", nil)
