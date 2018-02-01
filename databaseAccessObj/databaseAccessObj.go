@@ -49,9 +49,10 @@ func modId(userid int) int {
 // New construct Conn object
 func New() *Conn {
 	cfg := mysql.Config{
-		Addr: "mysql:3306",
-		User: "root",
-		Net: "tcp",
+		//Addr: "mysql:3306",
+		Addr:   "unsub.cqj5dn29eoyk.us-west-1.rds.amazonaws.com:3306",
+		User:   "root",
+		Net:    "tcp",
 		DBName: "unsubscribed",
 	}
 
@@ -138,7 +139,7 @@ func (conn *Conn) SelectRandSubset(tblNum, size int) map[int][]string {
 	return result
 }
 
-// Select returns items in database matching input dataSet 
+// Select returns items in database matching input dataSet
 func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 	db := conn.db
 	result := make(map[int][]string)
@@ -148,19 +149,19 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 		sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = ? and email = ?"
 		stmt, err := db.Prepare(sqlStr)
 		defer stmt.Close()
-		if(err != nil){
+		if err != nil {
 			log.Printf("Error preparing statement", err)
 			return nil
 		}
-		for e := range emails{
+		for e := range emails {
 			var user_id int
 			var email string
-      
+
 			err = stmt.QueryRow(userid, emails[e]).Scan(&user_id, &email)
-			if(err != nil){
-				if(err == sql.ErrNoRows){
+			if err != nil {
+				if err == sql.ErrNoRows {
 					continue
-				}else{
+				} else {
 					log.Printf("Error querying row", err)
 					return nil
 				}

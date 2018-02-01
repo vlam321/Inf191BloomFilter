@@ -52,18 +52,16 @@ func (bf *BloomFilter) UpdateBloomFilter(ts time.Time) {
 // RepopulateBloomFilter will be called if emails are removed from the
 // database (customers resubscribe)
 // also used to initially populate bloom filter
-func (bf *BloomFilter) RepopulateBloomFilter() {
+func (bf *BloomFilter) RepopulateBloomFilter(tableNum int) {
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
 	newBloomFilter := bloom.New(bf.bitArraySize, bf.numHashFunc)
 
-	for i := 0; i < dbShards; i++ {
-		data := db.SelectTable(i)
-		for userid, emails := range data {
-			u := strconv.Itoa(userid)
-			for e := range emails {
-				newBloomFilter.AddString(u + "_" + emails[e])
-			}
+	data := db.SelectTable(tableNum)
+	for userid, emails := range data {
+		u := strconv.Itoa(userid)
+		for e := range emails {
+			newBloomFilter.AddString(u + "_" + emails[e])
 		}
 	}
 	bf.bloomFilter = newBloomFilter.Copy()
