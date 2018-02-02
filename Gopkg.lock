@@ -130,7 +130,7 @@
     "bloomManager",
     "databaseAccessObj"
   ]
-  revision = "8f4132a86f2bd330173b656f79241892476c8cf9"
+  revision = "5767a87a20a25ee3046353fc0e27505ad329df04"
 
 [[projects]]
   name = "github.com/willf/bitset"
