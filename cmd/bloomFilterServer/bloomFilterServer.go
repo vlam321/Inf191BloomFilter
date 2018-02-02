@@ -26,11 +26,11 @@ import (
 	"strconv"
 	"time"
 
+	graphite "github.com/marpaia/graphite-golang"
 	"github.com/spf13/viper"
 	"github.com/vlam321/Inf191BloomFilter/bloomManager"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 
-	"github.com/cyberdelia/go-metrics-graphite"
 	metrics "github.com/rcrowley/go-metrics"
 )
 
@@ -209,7 +209,7 @@ func mapBf2Shard() error {
 
 func main() {
 	bfIP, err := getMyIP()
-	log.Println("BloomFilterIP: %s\n", bfIP)
+	log.Printf("BloomFilterIP: %s\n", bfIP)
 	if err != nil {
 		log.Println("BloomFilter: Error retrieve IP address.")
 	}
