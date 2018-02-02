@@ -209,7 +209,7 @@ func mapBf2Shard() error {
 
 func main() {
 	bfIP, err := getMyIP()
-	log.Println("BloomFilterIP: %s\n", bfIP)
+	log.Printf("BloomFilterIP: %s\n", bfIP)
 	if err != nil {
 		log.Println("BloomFilter: Error retrieve IP address.")
 	}

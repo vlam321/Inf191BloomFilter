@@ -51,12 +51,13 @@ func New() *Conn {
 	cfg := mysql.Config{
 		//Addr: "mysql:3306",
 		Addr:   "unsub.cqj5dn29eoyk.us-west-1.rds.amazonaws.com:3306",
-		User:   "root",
+		User:   "inf191",
+		Passwd: "",
 		Net:    "tcp",
 		DBName: "unsubscribed",
 	}
 
-	log.Println("USING DSN = ", cfg.FormatDSN())
+	// log.Println("USING DSN = ", cfg.FormatDSN())
 	db, err := sql.Open("mysql", cfg.FormatDSN())
 
 	if err != nil {
