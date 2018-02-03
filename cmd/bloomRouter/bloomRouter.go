@@ -103,9 +103,11 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println("Successfully parsed bloom server IPs.")
+	log.Printf("SUCCESSFULLY PARSED BLOOM SERVER IPS.")
+
 	mapRouter(bloomServerIPs)
-	log.Println("Successfully mapped bloom server IPs.")
+	log.Printf("SUCCESSFULLY MAPPED BLOOM SERVER IPS.")
+
 	http.HandleFunc("/filterUnsubscribed", handleRoute)
 	http.ListenAndServe(":9090", nil)
 }

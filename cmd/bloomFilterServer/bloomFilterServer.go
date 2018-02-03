@@ -172,7 +172,6 @@ func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 	for t := range ticker.C {
 		//Call update bloom filter
 		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(0)))
-		log.Printf("USING SHARD: %d\n", shard)
 		bf.RepopulateBloomFilter(shard)
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
@@ -205,38 +204,53 @@ func mapBf2Shard() error {
 	if err != nil {
 		return err
 	}
-	log.Println("DONE")
 	return nil
 }
 
 func main() {
 	bfIP, err := getMyIP()
-	mapBf2Shard()
-	log.Println(viper.GetString("host"))
+	if err != nil {
+		log.Printf("BloomFilter: %v\n", err.Error())
+		return
+	}
+
+	err = mapBf2Shard()
+	if err != nil {
+		log.Printf("BloomFilter: %v\n", err.Error())
+		return
+	}
+
 	if viper.GetString("host") == "docker" {
 		tabnum, err := strconv.Atoi(os.Getenv("SHARD"))
 		if err != nil {
 			log.Printf("Bloom Filter: %v\n", err.Error())
 		}
 		shard = tabnum
-	} else {
+	} else if viper.GetString("host") == "ec2" {
 		shard = viper.GetInt(bfIP)
+	} else {
+		log.Printf("BloomFilter: Invalid host config.")
+		return
 	}
 
-	log.Printf("BloomFilterIP: %s\n", bfIP)
-	if err != nil {
-		log.Println("BloomFilter: Error retrieve IP address.")
-	}
+	log.Printf("SUCCESSFULLY MAPPED FILTER TO DB SHARD.\n")
+	log.Printf("HOSTING ON: %s\n", viper.GetString("host"))
+	log.Printf("USING SHARD: %d\n", shard)
+
 	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+
 	bitArraySize, _ := strconv.ParseUint(os.Args[1], 10, 64)
 	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
 	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
+
 	// bf.RepopulateBloomFilter()
 	dao := databaseAccessObj.New()
+
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
 	go updateBloomFilterBackground(dao)
+
 	// http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	// http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
