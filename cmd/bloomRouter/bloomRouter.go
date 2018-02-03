@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -19,6 +20,9 @@ type Payload struct {
 type BloomServerIPs struct {
 	BloomFilterServer1 string
 	BloomFilterServer2 string
+	BloomFilterServer3 string
+	BloomFilterServer4 string
+	BloomFilterServer5 string
 }
 
 var bloomServerIPs BloomServerIPs
@@ -38,8 +42,14 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error: Unable to unmarshal Payload. %v\n", err.Error())
 		return
 	}
+	var endpoint string
+	if viper.GetString("host") == "ec2" {
+		endpoint = "http://" + routes[pyld.UserId] + ":9090/filterUnsubscribed"
+	} else {
+		endpoint = "http://" + viper.GetString("dockerIP") + ":" + routes[pyld.UserId] + "/filterUnsubscribed"
+	}
+	log.Printf("Request sent to: %s\n", endpoint)
 
-	endpoint := "http://" + routes[pyld.UserId] + ":9090/filterUnsubscribed"
 	res, _ := http.Post(endpoint, "application/json; charset=utf-8", bytes.NewBuffer(bbytes))
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
@@ -47,6 +57,20 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Router: error reading response from bloom filter. %v\n", err.Error())
 	}
 	w.Write(body)
+}
+
+func getMyIP() (myIP string, err error) {
+	resp, err := http.Get("http://checkip.amazonaws.com/")
+	if err != nil {
+		return "x.x.x.x", errors.New("Unable to find IP.")
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return "x.x.x.x", errors.New("Unable to find IP.")
+	}
+	return string(body[:]), nil
 }
 
 func getBloomFilterIPs() error {

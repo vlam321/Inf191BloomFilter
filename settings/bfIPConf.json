@@ -1,4 +1,7 @@
 {
-	"BloomFilterServer1" : "54.193.108.9",
-	"BloomFilterServer2" : "54.215.252.150"
+	"host" : "docker",
+	"dockerIP" : "192.168.99.100",
+	"BloomFilterServer1" : "9091",
+	"BloomFilterServer2" : "9092",
+	"BloomFilterServer3" : "9093"
 }

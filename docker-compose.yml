@@ -1,11 +1,21 @@
 version: '2'
 services:
-  bloomServer1:
+  bloomRouter:
     image: golang
-    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 10000 10
+    command: go run ./cmd/bloomRouter/bloomRouter.go
     volumes:
       - .:/go/src/github.com/vlam321/Inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/Inf191BloomFilter
+    ports:
+      - "9090:9090"
 
+  bloomServer1:
+    image: golang
+    environment:
+      - SHARD=0
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/Inf191BloomFilter
     working_dir: /go/src/github.com/vlam321/Inf191BloomFilter
 #    link:
 #            - mysql
@@ -14,10 +24,12 @@ services:
     
   bloomServer2:
     image: golang
-    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 10000 10
+    environment:
+      - SHARD=1
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
     volumes:
-      - .:/go/src/github.com/vlam321/github.com/vlam321/inf191BloomFilter
-    working_dir: /go/src/github.com/vlam321/github.com/vlam321/inf191BloomFilter
+      - .:/go/src/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/inf191BloomFilter
 #    links:
 #      - mysql
     ports:
@@ -25,10 +37,12 @@ services:
 
   bloomServer3:
     image: golang
-    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 10000 10
+    environment:
+      - SHARD=2
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
     volumes:
-      - .:/go/src/github.com/vlam321/github.com/vlam321/inf191BloomFilter
-    working_dir: /go/src/github.com/vlam321/github.com/vlam321/inf191BloomFilter
+      - .:/go/src/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/inf191BloomFilter
 #    links:
 #      - mysql
     ports:

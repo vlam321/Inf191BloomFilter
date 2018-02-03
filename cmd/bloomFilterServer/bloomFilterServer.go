@@ -41,6 +41,7 @@ type Payload struct {
 
 //The bloom filter for this server
 var bf *bloomManager.BloomFilter
+var shard int
 
 /*
 //handleUpdate will update the respective bloomFilter
@@ -164,14 +165,15 @@ func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 
 //updateBloomFilterBackground manages the periodic updates of the bloom
 //filter. Update calls repopulate, creating a new updated bloom filter
-func updateBloomFilterBackground(dao *databaseAccessObj.Conn, bfIP string) {
+func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 	//Set new ticker to every 2 seconds
 	ticker := time.NewTicker(time.Second * 3)
 
 	for t := range ticker.C {
 		//Call update bloom filter
 		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(0)))
-		bf.RepopulateBloomFilter(viper.GetInt(bfIP))
+		log.Printf("USING SHARD: %d\n", shard)
+		bf.RepopulateBloomFilter(shard)
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
 }
@@ -197,18 +199,30 @@ func getMyIP() (myIP string, err error) {
 }
 
 func mapBf2Shard() error {
-	viper.SetConfigName("bf2ShardConf")
-	viper.AddConfigPath("settomgs")
+	viper.SetConfigName("bfShardConf")
+	viper.AddConfigPath("settings")
 	err := viper.ReadInConfig()
 	if err != nil {
 		return err
 	}
-
+	log.Println("DONE")
 	return nil
 }
 
 func main() {
 	bfIP, err := getMyIP()
+	mapBf2Shard()
+	log.Println(viper.GetString("host"))
+	if viper.GetString("host") == "docker" {
+		tabnum, err := strconv.Atoi(os.Getenv("SHARD"))
+		if err != nil {
+			log.Printf("Bloom Filter: %v\n", err.Error())
+		}
+		shard = tabnum
+	} else {
+		shard = viper.GetInt(bfIP)
+	}
+
 	log.Printf("BloomFilterIP: %s\n", bfIP)
 	if err != nil {
 		log.Println("BloomFilter: Error retrieve IP address.")
@@ -222,7 +236,7 @@ func main() {
 	dao := databaseAccessObj.New()
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
-	go updateBloomFilterBackground(dao, bfIP)
+	go updateBloomFilterBackground(dao)
 	// http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	// http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
