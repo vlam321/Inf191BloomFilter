@@ -6,6 +6,6 @@ ARG shard
 ARG port
 ENV SERVICE=$service
 ENV SHARD=$shard
-EXPOSE $port 9090
+EXPOSE $port
 CMD ./run.sh $SERVICE
 
