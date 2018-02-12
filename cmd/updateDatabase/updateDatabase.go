@@ -1,26 +1,26 @@
 package main // probably need to convert this to a proper go test
 
 import (
-	"log"
-	"time"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 )
 
 type UserInputs struct {
-	command  string
-	numUser  int
-	minEmail int
-	maxEmail int
-	tableNum int
-	numEmail int
+	command   string
+	numUser   int
+	minEmail  int
+	maxEmail  int
+	tableNum  int
+	numEmail  int
 	avgEmails int
-	interval int
+	interval  int
 }
 
 const unsub_schema = `(user_id int(11), email varchar(255), ts timestamp default current_timestamp, primary key (user_id, email));`
@@ -87,11 +87,11 @@ func handleMakeTable() {
 }
 
 // autoUpdate updates database based on time input
-func handleAuto(avgEmails int, interval int){
+func handleAuto(avgEmails int, interval int) {
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
-	ticker := time.NewTicker(time.Duration(interval)*time.Millisecond)
-	for _ = range ticker.C{
+	ticker := time.NewTicker(time.Duration(interval) * time.Millisecond)
+	for _ = range ticker.C {
 		log.Printf("Inserting %d emails into database", avgEmails)
 		dao.Insert(bloomDataGenerator.GenData(1, avgEmails, avgEmails+1))
 	}

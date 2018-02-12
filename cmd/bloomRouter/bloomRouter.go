@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/fatih/structs"
 	"github.com/spf13/viper"
@@ -25,7 +26,16 @@ type BloomServerIPs struct {
 	BloomFilterServer5 string
 }
 
+type BloomContainerNames struct {
+	BloomFilterContainer1 string
+	BloomFilterContainer2 string
+	BloomFilterContainer3 string
+	BloomFilterContainer4 string
+	BloomFilterContainer5 string
+}
+
 var bloomServerIPs BloomServerIPs
+var bloomContainerNames BloomContainerNames
 var routes map[int]string
 
 func handleRoute(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +56,7 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 	if viper.GetString("host") == "ec2" {
 		endpoint = "http://" + routes[pyld.UserId] + ":9090/filterUnsubscribed"
 	} else {
-		endpoint = "http://" + viper.GetString("dockerIP") + ":" + routes[pyld.UserId] + "/filterUnsubscribed"
+		endpoint = "http://" + os.Getenv(routes[pyld.UserId]) + ":9090/filterUnsubscribed"
 	}
 	log.Printf("Request sent to: %s\n", endpoint)
 
@@ -82,19 +92,32 @@ func getBloomFilterIPs() error {
 		return err
 	}
 
-	err = viper.Unmarshal(&bloomServerIPs)
-	if err != nil {
-		return err
+	if viper.GetString("host") == "docker" {
+		err = viper.Unmarshal(&bloomContainerNames)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = viper.Unmarshal(&bloomServerIPs)
+		if err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 
 func mapRouter(bloomFilterIPs BloomServerIPs) {
 	routes = make(map[int]string)
-	bloomIPs := structs.Values(bloomFilterIPs)
-	for i := range bloomIPs {
-		routes[i] = bloomIPs[i].(string)
+	if viper.GetString("host") == "docker" {
+		containerNames := structs.Values(bloomContainerNames)
+		for i := range containerNames {
+			routes[i] = containerNames[i].(string)
+		}
+	} else {
+		bloomIPs := structs.Values(bloomFilterIPs)
+		for i := range bloomIPs {
+			routes[i] = bloomIPs[i].(string)
+		}
 	}
 }
 
