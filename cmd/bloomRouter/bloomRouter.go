@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/fatih/structs"
 	"github.com/spf13/viper"
@@ -19,9 +21,21 @@ type Payload struct {
 type BloomServerIPs struct {
 	BloomFilterServer1 string
 	BloomFilterServer2 string
+	BloomFilterServer3 string
+	BloomFilterServer4 string
+	BloomFilterServer5 string
+}
+
+type BloomContainerNames struct {
+	BloomFilterContainer1 string
+	BloomFilterContainer2 string
+	BloomFilterContainer3 string
+	BloomFilterContainer4 string
+	BloomFilterContainer5 string
 }
 
 var bloomServerIPs BloomServerIPs
+var bloomContainerNames BloomContainerNames
 var routes map[int]string
 
 func handleRoute(w http.ResponseWriter, r *http.Request) {
@@ -38,8 +52,14 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error: Unable to unmarshal Payload. %v\n", err.Error())
 		return
 	}
+	var endpoint string
+	if viper.GetString("host") == "ec2" {
+		endpoint = "http://" + routes[pyld.UserId] + ":9090/filterUnsubscribed"
+	} else {
+		endpoint = "http://" + os.Getenv(routes[pyld.UserId]) + ":9090/filterUnsubscribed"
+	}
+	log.Printf("Request sent to: %s\n", endpoint)
 
-	endpoint := "http://" + routes[pyld.UserId] + ":9090/filterUnsubscribed"
 	res, _ := http.Post(endpoint, "application/json; charset=utf-8", bytes.NewBuffer(bbytes))
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
@@ -47,6 +67,20 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Router: error reading response from bloom filter. %v\n", err.Error())
 	}
 	w.Write(body)
+}
+
+func getMyIP() (myIP string, err error) {
+	resp, err := http.Get("http://checkip.amazonaws.com/")
+	if err != nil {
+		return "x.x.x.x", errors.New("Unable to find IP.")
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		return "x.x.x.x", errors.New("Unable to find IP.")
+	}
+	return string(body[:]), nil
 }
 
 func getBloomFilterIPs() error {
@@ -58,19 +92,32 @@ func getBloomFilterIPs() error {
 		return err
 	}
 
-	err = viper.Unmarshal(&bloomServerIPs)
-	if err != nil {
-		return err
+	if viper.GetString("host") == "docker" {
+		err = viper.Unmarshal(&bloomContainerNames)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = viper.Unmarshal(&bloomServerIPs)
+		if err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 
 func mapRouter(bloomFilterIPs BloomServerIPs) {
 	routes = make(map[int]string)
-	bloomIPs := structs.Values(bloomFilterIPs)
-	for i := range bloomIPs {
-		routes[i] = bloomIPs[i].(string)
+	if viper.GetString("host") == "docker" {
+		containerNames := structs.Values(bloomContainerNames)
+		for i := range containerNames {
+			routes[i] = containerNames[i].(string)
+		}
+	} else {
+		bloomIPs := structs.Values(bloomFilterIPs)
+		for i := range bloomIPs {
+			routes[i] = bloomIPs[i].(string)
+		}
 	}
 }
 
@@ -79,9 +126,11 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println("Successfully parsed bloom server IPs.")
+	log.Printf("SUCCESSFULLY PARSED BLOOM SERVER IPS.")
+
 	mapRouter(bloomServerIPs)
-	log.Println("Successfully mapped bloom server IPs.")
+	log.Printf("SUCCESSFULLY MAPPED BLOOM SERVER IPS.")
+
 	http.HandleFunc("/filterUnsubscribed", handleRoute)
 	http.ListenAndServe(":9090", nil)
 }

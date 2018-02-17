@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/spf13/viper"
 )
 
 // dbShards number of shards in database
@@ -48,13 +49,21 @@ func modId(userid int) int {
 
 // New construct Conn object
 func New() *Conn {
+	viper.SetConfigName("sqlConn")
+	viper.AddConfigPath("settings")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Printf("Database access object: %v\n", err.Error())
+	}
+
 	cfg := mysql.Config{
 		//Addr: "mysql:3306",
-		Addr:   "unsub.cqj5dn29eoyk.us-west-1.rds.amazonaws.com:3306",
-		User:   "inf191",
-		Passwd: "",
-		Net:    "tcp",
-		DBName: "unsubscribed",
+		Addr:   viper.GetString("Addr"),
+		User:   viper.GetString("User"),
+		Passwd: viper.GetString("Passwd"),
+		Net:    viper.GetString("Net"),
+		DBName: viper.GetString("DBName"),
 	}
 
 	// log.Println("USING DSN = ", cfg.FormatDSN())

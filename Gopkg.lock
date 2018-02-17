@@ -55,12 +55,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/marpaia/graphite-golang"
-  packages = ["."]
-  revision = "134b9af18cf31f936ebddbd11c03eead4d501601"
-
-[[projects]]
-  branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "b4575eea38cca1123ec2dc90c26529b5c5acfcff"
@@ -136,7 +130,7 @@
     "bloomManager",
     "databaseAccessObj"
   ]
-  revision = "2e63d25200753fd8e5df63952b3de6b4d794bc0f"
+  revision = "5767a87a20a25ee3046353fc0e27505ad329df04"
 
 [[projects]]
   name = "github.com/willf/bitset"
@@ -178,6 +172,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4c8eda70579d28c07fad81398759420d384b7e1dee7d1699902c4a74316ba190"
+  inputs-digest = "e0c436c47725be4ed6f6a7ed7766577a39223a9732f971efb6d477cda83359a2"
   solver-name = "gps-cdcl"
   solver-version = 1

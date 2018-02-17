@@ -41,6 +41,7 @@ type Payload struct {
 
 //The bloom filter for this server
 var bf *bloomManager.BloomFilter
+var shard int
 
 /*
 //handleUpdate will update the respective bloomFilter
@@ -164,14 +165,14 @@ func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 
 //updateBloomFilterBackground manages the periodic updates of the bloom
 //filter. Update calls repopulate, creating a new updated bloom filter
-func updateBloomFilterBackground(dao *databaseAccessObj.Conn, bfIP string) {
+func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 	//Set new ticker to every 2 seconds
 	ticker := time.NewTicker(time.Second * 3)
 
 	for t := range ticker.C {
 		//Call update bloom filter
 		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(0)))
-		bf.RepopulateBloomFilter(viper.GetInt(bfIP))
+		bf.RepopulateBloomFilter(shard)
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
 }
@@ -197,32 +198,59 @@ func getMyIP() (myIP string, err error) {
 }
 
 func mapBf2Shard() error {
-	viper.SetConfigName("bf2ShardConf")
-	viper.AddConfigPath("settomgs")
+	viper.SetConfigName("bfShardConf")
+	viper.AddConfigPath("settings")
 	err := viper.ReadInConfig()
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
 func main() {
 	bfIP, err := getMyIP()
-	log.Printf("BloomFilterIP: %s\n", bfIP)
 	if err != nil {
-		log.Println("BloomFilter: Error retrieve IP address.")
+		log.Printf("BloomFilter: %v\n", err.Error())
+		return
 	}
+
+	err = mapBf2Shard()
+	if err != nil {
+		log.Printf("BloomFilter: %v\n", err.Error())
+		return
+	}
+
+	if viper.GetString("host") == "docker" {
+		tabnum, err := strconv.Atoi(os.Getenv("SHARD"))
+		if err != nil {
+			log.Printf("Bloom Filter: %v\n", err.Error())
+		}
+		shard = tabnum
+	} else if viper.GetString("host") == "ec2" {
+		shard = viper.GetInt(bfIP)
+	} else {
+		log.Printf("BloomFilter: Invalid host config.")
+		return
+	}
+
+	log.Printf("SUCCESSFULLY MAPPED FILTER TO DB SHARD.\n")
+	log.Printf("HOSTING ON: %s\n", viper.GetString("host"))
+	log.Printf("USING SHARD: %d\n", shard)
+
 	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+
 	bitArraySize, _ := strconv.ParseUint(os.Args[1], 10, 64)
 	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
 	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
+
 	// bf.RepopulateBloomFilter()
 	dao := databaseAccessObj.New()
+
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
-	go updateBloomFilterBackground(dao, bfIP)
+	go updateBloomFilterBackground(dao)
+
 	// http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	// http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
