@@ -17,8 +17,8 @@ services:
     volumes:
       - .:/go/src/github.com/vlam321/Inf191BloomFilter
     working_dir: /go/src/github.com/vlam321/Inf191BloomFilter
-#    link:
-#            - mysql
+    links:
+            - mysql
     ports:
       - "9091:9090"
     
@@ -30,8 +30,8 @@ services:
     volumes:
       - .:/go/src/github.com/vlam321/inf191BloomFilter
     working_dir: /go/src/github.com/vlam321/inf191BloomFilter
-#    links:
-#      - mysql
+    links:
+      - mysql
     ports:
       - "9092:9090"
 
@@ -43,8 +43,8 @@ services:
     volumes:
       - .:/go/src/github.com/vlam321/inf191BloomFilter
     working_dir: /go/src/github.com/vlam321/inf191BloomFilter
-#    links:
-#      - mysql
+    links:
+      - mysql
     ports:
       - "9093:9090"
 
@@ -62,11 +62,11 @@ services:
     ports:
       - "3000:3000/tcp"
 
-#  mysql:
-#    hostname: mysql
-#    image: percona:5.5
-#    environment:
-#      - MYSQL_ALLOW_EMPTY_PASSWORD=1
-#    ports:
-#     - "3306:3306"
+  mysql:
+    hostname: mysql
+    image: percona:5.5
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=1
+    ports:
+     - "3306:3306"
 
