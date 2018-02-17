@@ -39,6 +39,10 @@
 
 [[constraint]]
   branch = "master"
+  name = "github.com/marpaia/graphite-golang"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/rcrowley/go-metrics"
 
 [[constraint]]
