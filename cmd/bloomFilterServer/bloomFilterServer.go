@@ -20,13 +20,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
-	graphite "github.com/marpaia/graphite-golang"
 	"github.com/spf13/viper"
 	"github.com/vlam321/Inf191BloomFilter/bloomManager"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
@@ -178,8 +176,10 @@ func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 }
 
 // setBloomFilter initialize bloom filter
-func setBloomFilter(bitArraySize, numHashFunc uint) {
-	bf = bloomManager.New(bitArraySize, numHashFunc)
+func setBloomFilter(dao *databaseAccessObj.Conn) {
+	numEmails := uint(dao.GetTableSize(shard))
+	falsePositiveProb := float64(0.001)
+	bf = bloomManager.New(numEmails, falsePositiveProb)
 }
 
 // Retrieve the IPv4 address of the current AWS EC2 instance
@@ -237,15 +237,13 @@ func main() {
 	log.Printf("HOSTING ON: %s\n", viper.GetString("host"))
 	log.Printf("USING SHARD: %d\n", shard)
 
-	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
-	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
-
-	bitArraySize, _ := strconv.ParseUint(os.Args[1], 10, 64)
-	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
-	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
+	// addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
+	// go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 	// bf.RepopulateBloomFilter()
 	dao := databaseAccessObj.New()
+
+	setBloomFilter(dao)
 
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
