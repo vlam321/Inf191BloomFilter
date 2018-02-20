@@ -49,7 +49,7 @@ func modId(userid int) int {
 
 // New construct Conn object
 func New() *Conn {
-	viper.SetConfigName("sqlConn")
+	viper.SetConfigName("sqlConn3")
 	viper.AddConfigPath("settings")
 
 	err := viper.ReadInConfig()
@@ -65,6 +65,13 @@ func New() *Conn {
 		Net:    viper.GetString("Net"),
 		DBName: viper.GetString("DBName"),
 	}
+
+
+	log.Println(viper.GetString("Addr"))
+	log.Println(viper.GetString("User"))
+	log.Println(viper.GetString("Passwd"))
+	log.Println(viper.GetString("Net"))
+	log.Println(viper.GetString("DBName"))
 
 	// log.Println("USING DSN = ", cfg.FormatDSN())
 	db, err := sql.Open("mysql", cfg.FormatDSN())

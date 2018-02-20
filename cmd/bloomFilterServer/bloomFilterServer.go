@@ -30,14 +30,10 @@ import (
 	"github.com/spf13/viper"
 	"github.com/vlam321/Inf191BloomFilter/bloomManager"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
+	"github.com/vlam321/Inf191BloomFilter/payload"
 
 	metrics "github.com/rcrowley/go-metrics"
 )
-
-type Payload struct {
-	UserId int
-	Emails []string
-}
 
 //The bloom filter for this server
 var bf *bloomManager.BloomFilter
@@ -81,59 +77,8 @@ func handleMetric(w http.ResponseWriter, r *http.Request) {
 	log.Printf("user id  = %d\n", uid)
 }
 
-//handleFilterUnsubscripe handles when the client requests to recieve
-//those emails that are unsubscribed therefore, IN the database.
+// handleFilterUnsubscribed 
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
-	var buff []byte
-	var payload Payload
-
-	//Result struct made to carry the result of unsuscribed emails
-	type Result struct {
-		Trues []string
-	}
-
-	// log.Printf("%v", r.Body)
-	//decode byets from request body
-	err := json.NewDecoder(r.Body).Decode(&buff)
-
-	//check for error; if error write 404
-	if err != nil {
-		w.WriteHeader(404)
-		w.Write([]byte("404 - " + http.StatusText(404)))
-		// http.Error(w, err.Error(), 400)
-		// return
-	}
-
-	// converts the decoded result to a Payload struct
-	err = json.Unmarshal(buff, &payload)
-	if err != nil {
-		log.Printf("error unmashaling payload %v %s\n", err, string(buff))
-		return
-	}
-	/*
-		var emailInputs []string
-		for i := range payload.Emails {
-			emailInputs = append(emailInputs, strconv.Itoa(payload.UserId)+"_"+payload.Emails[i])
-		}
-	*/
-
-	//uses bloomManager to get the result of unsubscribed emails
-	//puts them in struct, result
-	emails := bf.GetArrayOfUnsubscribedEmails(map[int][]string{payload.UserId: payload.Emails})
-	// filteredEmails := Result{emails}
-
-	//convert result to json
-	js, err := json.Marshal(emails)
-	if err != nil {
-		log.Printf("Error marshaling filteredEmails: %v\n", err)
-		return
-	}
-
-	//write back to client
-	w.Write(js)
-}
-
-func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -141,8 +86,8 @@ func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var pyld Payload
-	err = json.Unmarshal(bytes, &pyld)
+	var pl payload.Payload
+	err = json.Unmarshal(bytes, &pl)
 	if err != nil {
 		log.Printf("Error: Unable to unmarshal Payload. %v\n", err.Error())
 		return
@@ -150,9 +95,10 @@ func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 
 	//uses bloomManager to get the result of unsubscribed emails
 	//puts them in struct, result
-	filteredResults := bf.GetArrayOfUnsubscribedEmails(map[int][]string{pyld.UserId: pyld.Emails})
+	filteredResults := bf.GetArrayOfUnsubscribedEmails(map[int][]string{pl.UserId: pl.Emails})
+	results := payload.Payload{pl.UserId, filteredResults[pl.UserId]}
 
-	jsn, err := json.Marshal(filteredResults)
+	jsn, err := json.Marshal(results)
 	if err != nil {
 		log.Printf("Error marshaling filtered emails. %v\n", err.Error())
 		return
@@ -246,15 +192,14 @@ func main() {
 
 	// bf.RepopulateBloomFilter()
 	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
 
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
 	go updateBloomFilterBackground(dao)
 
-	// http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	// http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
-	http.HandleFunc("/filterUnsubscribed", handleTFilterUnsubscribed)
+	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.ListenAndServe(":9090", nil)
-	dao.CloseConnection()
 }
