@@ -151,9 +151,8 @@ services:
 
   mysql:
     hostname: mysql
-    image: percona:5.5
+    image: percona:5.5 
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=1
     ports:
-     - "3306:3306"
-
+      - "3306:3306"
