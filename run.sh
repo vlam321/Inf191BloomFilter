@@ -5,6 +5,6 @@ if [ "$1" == "bloomRouter" ]; then
 fi
 
 if [ "$1" == "bloomFilterServer" ]; then
-	go run "cmd/$1/$1.go" 1000000 10;
+	go run "cmd/$1/$1.go";
 fi
 
