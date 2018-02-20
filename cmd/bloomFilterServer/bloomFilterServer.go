@@ -16,7 +16,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -183,16 +182,16 @@ func setBloomFilter(dao *databaseAccessObj.Conn) {
 }
 
 // Retrieve the IPv4 address of the current AWS EC2 instance
-func getMyIP() (myIP string, err error) {
+func getMyIP() (string, error) {
 	resp, err := http.Get("http://checkip.amazonaws.com/")
 	if err != nil {
-		return "x.x.x.x", errors.New("Unable to find IP.")
+		return "x.x.x.x", err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		return "x.x.x.x", errors.New("Unable to find IP.")
+		return "x.x.x.x", err
 	}
 	return string(body[:]), nil
 }
