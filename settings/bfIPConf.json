@@ -6,9 +6,14 @@
 	"BloomFilterContainer3": "BF3",
 	"BloomFilterContainer4": "BF4",
 	"BloomFilterContainer5": "BF5",
-	"BloomFilterServer1" : "",
-	"BloomFilterServer2" : "",
-	"BloomFilterServer3" : "",
-	"BloomFilterServer4" : "",
-	"BloomFilterServer5" : ""
+	"BloomFilterServer1" : "9091",
+	"BloomFilterServer2" : "9092",
+	"BloomFilterServer3" : "9093",
+	"BloomFilterServer4" : "9094",
+	"BloomFilterServer5" : "9095",
+	"BloomFilterServer6" : "9096",
+	"BloomFilterServer7" : "9097",
+	"BloomFilterServer8" : "9098",
+	"BloomFilterServer9" : "9099",
+	"BloomFIlterServer10" :"9100"
 }

@@ -49,7 +49,7 @@ func modId(userid int) int {
 
 // New construct Conn object
 func New() *Conn {
-	viper.SetConfigName("sqlConn")
+	viper.SetConfigName("sqlConn2")
 	viper.AddConfigPath("settings")
 
 	err := viper.ReadInConfig()

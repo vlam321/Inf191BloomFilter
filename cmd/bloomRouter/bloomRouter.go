@@ -7,23 +7,25 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
+
+	"github.com/vlam321/Inf191BloomFilter/payload"
 
 	"github.com/fatih/structs"
 	"github.com/spf13/viper"
 )
 
-type Payload struct {
-	UserId int
-	Emails []string
-}
-
+// BloomServerIPs struct holding ips of each bloom filter server; retrieved through getBloomFilterIPs()
 type BloomServerIPs struct {
-	BloomFilterServer1 string
-	BloomFilterServer2 string
-	BloomFilterServer3 string
-	BloomFilterServer4 string
-	BloomFilterServer5 string
+	BloomFilterServer1  string
+	BloomFilterServer2  string
+	BloomFilterServer3  string
+	BloomFilterServer4  string
+	BloomFilterServer5  string
+	BloomFilterServer6  string
+	BloomFilterServer7  string
+	BloomFilterServer8  string
+	BloomFilterServer9  string
+	BloomFilterServer10 string
 }
 
 type BloomContainerNames struct {
@@ -38,28 +40,37 @@ var bloomServerIPs BloomServerIPs
 var bloomContainerNames BloomContainerNames
 var routes map[int]string
 
-func handleRoute(w http.ResponseWriter, r *http.Request) {
-	bbytes, err := ioutil.ReadAll(r.Body)
+func retrieveEndpoint(userid int) string {
+	var endpoint string
+	if viper.GetString("host") == "ec2" {
+		endpoint = "http://" + routes[userid] + ":9090/filterUnsubscribed"
+	} else {
+		endpoint = "http://" + viper.GetString("dockerIP") + ":" + routes[userid] + "/filterUnsubscribed"
+	}
+	return endpoint
+}
 
+func handleRoute(w http.ResponseWriter, r *http.Request) {
+	// read request data
+	bbytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error: Unable to read request data. %v\n", err.Error())
 		return
 	}
 
-	var pyld Payload
-	err = json.Unmarshal(bbytes, &pyld)
+	// unmarshal payload
+	var pl payload.Payload
+	err = json.Unmarshal(bbytes, &pl)
 	if err != nil {
 		log.Printf("Error: Unable to unmarshal Payload. %v\n", err.Error())
 		return
 	}
-	var endpoint string
-	if viper.GetString("host") == "ec2" {
-		endpoint = "http://" + routes[pyld.UserId] + ":9090/filterUnsubscribed"
-	} else {
-		endpoint = "http://" + os.Getenv(routes[pyld.UserId]) + ":9090/filterUnsubscribed"
-	}
+
+	// determine endpoint based on host
+	endpoint := retrieveEndpoint(pl.UserId)
 	log.Printf("Request sent to: %s\n", endpoint)
 
+	// make request to endpoint
 	res, _ := http.Post(endpoint, "application/json; charset=utf-8", bytes.NewBuffer(bbytes))
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
@@ -69,6 +80,7 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 	w.Write(body)
 }
 
+// getMyIP() retrieve IP on local host
 func getMyIP() (myIP string, err error) {
 	resp, err := http.Get("http://checkip.amazonaws.com/")
 	if err != nil {
@@ -83,6 +95,7 @@ func getMyIP() (myIP string, err error) {
 	return string(body[:]), nil
 }
 
+// getBloomFilterIPs() retrieve IPs of each bloom filter server and store in bloomServerIPs
 func getBloomFilterIPs() error {
 	viper.SetConfigName("bfIPConf")
 	viper.AddConfigPath("settings")
@@ -122,6 +135,7 @@ func mapRouter(bloomFilterIPs BloomServerIPs) {
 }
 
 func main() {
+	log.Printf("RETRIEVING BLOOM FILTER IP'S")
 	err := getBloomFilterIPs()
 	if err != nil {
 		log.Println(err)
