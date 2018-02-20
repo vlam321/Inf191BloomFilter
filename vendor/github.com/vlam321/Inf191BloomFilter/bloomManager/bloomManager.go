@@ -1,6 +1,7 @@
 package bloomManager
 
 import (
+	"log"
 	"strconv"
 
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
@@ -12,15 +13,14 @@ const dbShards = 15
 
 // BloomFilter struct holds the pointer to the bloomFilter object
 type BloomFilter struct {
-	bloomFilter  *bloom.BloomFilter
-	bitArraySize uint
-	numHashFunc  uint
+	bloomFilter *bloom.BloomFilter
 }
 
 // New is called to instantiate a new BloomFilter object
-func New(bitArraySize, numHashFunc uint) *BloomFilter {
-	bloomFilter := bloom.New(bitArraySize, numHashFunc)
-	return &BloomFilter{bloomFilter, bitArraySize, numHashFunc}
+func New(numEmail uint, fpProb float64) *BloomFilter {
+	bloomFilter := bloom.NewWithEstimates(numEmail, fpProb)
+	log.Printf("BLOOM STATS: %d HASH FUNCTIONS | BIT ARRAY LEN OF %d", bloomFilter.K(), bloomFilter.Cap())
+	return &BloomFilter{bloomFilter}
 }
 
 // GetStats returns false positive rate of bloom filter based on input size
@@ -55,7 +55,8 @@ func (bf *BloomFilter) UpdateBloomFilter(ts time.Time) {
 func (bf *BloomFilter) RepopulateBloomFilter(tableNum int) {
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
-	newBloomFilter := bloom.New(bf.bitArraySize, bf.numHashFunc)
+	numEmail := uint(db.GetTableSize(tableNum))
+	newBloomFilter := bloom.NewWithEstimates(numEmail, float64(0.001))
 
 	data := db.SelectTable(tableNum)
 	for userid, emails := range data {

@@ -16,17 +16,14 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
-	graphite "github.com/marpaia/graphite-golang"
 	"github.com/spf13/viper"
 	"github.com/vlam321/Inf191BloomFilter/bloomManager"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
@@ -124,21 +121,23 @@ func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 }
 
 // setBloomFilter initialize bloom filter
-func setBloomFilter(bitArraySize, numHashFunc uint) {
-	bf = bloomManager.New(bitArraySize, numHashFunc)
+func setBloomFilter(dao *databaseAccessObj.Conn) {
+	numEmails := uint(dao.GetTableSize(shard))
+	falsePositiveProb := float64(0.001)
+	bf = bloomManager.New(numEmails, falsePositiveProb)
 }
 
 // Retrieve the IPv4 address of the current AWS EC2 instance
-func getMyIP() (myIP string, err error) {
+func getMyIP() (string, error) {
 	resp, err := http.Get("http://checkip.amazonaws.com/")
 	if err != nil {
-		return "x.x.x.x", errors.New("Unable to find IP.")
+		return "x.x.x.x", err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		return "x.x.x.x", errors.New("Unable to find IP.")
+		return "x.x.x.x", err
 	}
 	return string(body[:]), nil
 }
@@ -183,16 +182,14 @@ func main() {
 	log.Printf("HOSTING ON: %s\n", viper.GetString("host"))
 	log.Printf("USING SHARD: %d\n", shard)
 
-	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
-	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
-
-	bitArraySize, _ := strconv.ParseUint(os.Args[1], 10, 64)
-	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
-	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
+	// addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
+	// go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 	// bf.RepopulateBloomFilter()
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
+
+	setBloomFilter(dao)
 
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
