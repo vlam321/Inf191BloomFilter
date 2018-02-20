@@ -48,6 +48,93 @@ services:
     ports:
       - "9093:9090"
 
+  bloomServer4:
+    image: golang
+    environment:
+      - SHARD=3
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9094:9090"
+
+  bloomServer5:
+    image: golang
+    environment:
+      - SHARD=4
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9095:9090"
+
+  bloomServer6:
+    image: golang
+    environment:
+      - SHARD=4
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9096:9090"
+  bloomServer7:
+    image: golang
+    environment:
+      - SHARD=4
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9097:9090"
+  bloomServer8:
+    image: golang
+    environment:
+      - SHARD=4
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9098:9090"
+  bloomServer9:
+    image: golang
+    environment:
+      - SHARD=4
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9099:9090"
+  bloomServer10:
+    image: golang
+    environment:
+      - SHARD=4
+    command: go run ./cmd/bloomFilterServer/bloomFilterServer.go 1000000 10
+    volumes:
+      - .:/go/src/github.com/vlam321/inf191BloomFilter
+    working_dir: /go/src/github.com/vlam321/inf191BloomFilter
+    links:
+      - mysql
+    ports:
+      - "9100:9090"
+
   graphite:
     image: hopsoft/graphite-statsd
     ports:
@@ -64,9 +151,8 @@ services:
 
   mysql:
     hostname: mysql
-    image: percona:5.5
+    image: percona:5.5 
     environment:
       - MYSQL_ALLOW_EMPTY_PASSWORD=1
     ports:
-     - "3306:3306"
-
+      - "3306:3306"
