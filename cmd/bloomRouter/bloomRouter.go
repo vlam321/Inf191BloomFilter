@@ -34,6 +34,11 @@ type BloomContainerNames struct {
 	BloomFilterContainer3 string
 	BloomFilterContainer4 string
 	BloomFilterContainer5 string
+	BloomFilterContainer6 string
+	BloomFilterContainer7 string
+	BloomFilterContainer8 string
+	BloomFilterContainer9 string
+	BloomFilterContainer10 string
 }
 
 var bloomServerIPs BloomServerIPs
@@ -54,7 +59,7 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 	// read request data
 	bbytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Error: Unable to read request data. %v\n", err.Error())
+		log.Printf("Error: Unable to read request data. %v\n", err)
 		return
 	}
 
@@ -62,7 +67,7 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 	var pl payload.Payload
 	err = json.Unmarshal(bbytes, &pl)
 	if err != nil {
-		log.Printf("Error: Unable to unmarshal Payload. %v\n", err.Error())
+		log.Printf("Error: Unable to unmarshal Payload. %v\n", err)
 		return
 	}
 
@@ -75,7 +80,7 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Printf("Router: error reading response from bloom filter. %v\n", err.Error())
+		log.Printf("Router: error reading response from bloom filter. %v\n", err)
 	}
 	w.Write(body)
 }
@@ -105,7 +110,7 @@ func getBloomFilterIPs() error {
 		return err
 	}
 
-	if viper.GetString("host") == "docker" {
+	if viper.GetString("host") == "ec2" {
 		err = viper.Unmarshal(&bloomContainerNames)
 		if err != nil {
 			return err
@@ -121,7 +126,7 @@ func getBloomFilterIPs() error {
 
 func mapRouter(bloomFilterIPs BloomServerIPs) {
 	routes = make(map[int]string)
-	if viper.GetString("host") == "docker" {
+	if viper.GetString("host") == "ec2" {
 		containerNames := structs.Values(bloomContainerNames)
 		for i := range containerNames {
 			routes[i] = containerNames[i].(string)
@@ -131,6 +136,9 @@ func mapRouter(bloomFilterIPs BloomServerIPs) {
 		for i := range bloomIPs {
 			routes[i] = bloomIPs[i].(string)
 		}
+	}
+	for k,v := range routes{
+		log.Printf("key: %v	 value: %v\n", k, v)
 	}
 }
 

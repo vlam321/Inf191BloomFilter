@@ -49,12 +49,12 @@ func modId(userid int) int {
 
 // New construct Conn object
 func New() *Conn {
-	viper.SetConfigName("sqlConn3")
+	viper.SetConfigName("sqlConnDocker")
 	viper.AddConfigPath("settings")
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Printf("Database access object: %v\n", err.Error())
+		log.Printf("Database access object: %v\n", err)
 	}
 
 	cfg := mysql.Config{
@@ -372,7 +372,7 @@ func (conn *Conn) GetTableSize(tableNum int) int {
 	sqlStr := "SELECT COUNT(*) FROM unsub_" + strconv.Itoa(tableNum) + ";"
 	rows, err := db.Query(sqlStr)
 	if err != nil {
-		log.Printf("Error: Unable to query count. %v\n", err.Error())
+		log.Printf("Error: Unable to query count. %v\n", err)
 	}
 	defer rows.Close()
 
@@ -380,7 +380,7 @@ func (conn *Conn) GetTableSize(tableNum int) int {
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
-			log.Printf("Error: Unable to scan row counts %v\n", err.Error())
+			log.Printf("Error: Unable to scan row counts %v\n", err)
 		}
 	}
 	return count

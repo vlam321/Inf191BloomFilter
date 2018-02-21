@@ -79,14 +79,14 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Error: Unable to read request data. %v\n", err.Error())
+		log.Printf("Error: Unable to read request data. %v\n", err)
 		return
 	}
 
 	var pl payload.Payload
 	err = json.Unmarshal(bytes, &pl)
 	if err != nil {
-		log.Printf("Error: Unable to unmarshal Payload. %v\n", err.Error())
+		log.Printf("Error: Unable to unmarshal Payload. %v\n", err)
 		return
 	}
 
@@ -97,7 +97,7 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 
 	jsn, err := json.Marshal(results)
 	if err != nil {
-		log.Printf("Error marshaling filtered emails. %v\n", err.Error())
+		log.Printf("Error marshaling filtered emails. %v\n", err)
 		return
 	}
 
@@ -114,7 +114,7 @@ func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 
 	for t := range ticker.C {
 		//Call update bloom filter
-		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(0)))
+		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(shard)))
 		bf.RepopulateBloomFilter(shard)
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
@@ -155,20 +155,20 @@ func mapBf2Shard() error {
 func main() {
 	bfIP, err := getMyIP()
 	if err != nil {
-		log.Printf("BloomFilter: %v\n", err.Error())
+		log.Printf("BloomFilter: %v\n", err)
 		return
 	}
 
 	err = mapBf2Shard()
 	if err != nil {
-		log.Printf("BloomFilter: %v\n", err.Error())
+		log.Printf("BloomFilter: %v\n", err)
 		return
 	}
 
 	if viper.GetString("host") == "docker" {
 		tabnum, err := strconv.Atoi(os.Getenv("SHARD"))
 		if err != nil {
-			log.Printf("Bloom Filter: %v\n", err.Error())
+			log.Printf("Bloom Filter: %v\n", err)
 		}
 		shard = tabnum
 	} else if viper.GetString("host") == "ec2" {
