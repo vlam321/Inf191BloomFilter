@@ -31,7 +31,7 @@ type Payload struct {
 
 func checkErr(err error) {
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
 }
 
@@ -116,7 +116,7 @@ func TestNewUnsubscribes(t *testing.T) {
 	// converts the decoded result back to a Result struct
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		log.Printf("Error: Unable to unmarshal the request body. %v\n", err.Error())
+		log.Printf("Error: Unable to unmarshal the request body. %v\n", err)
 	}
 
 	fmt.Printf("%d ID:Email pairs returned == 0 ID:Email pairs expected\n", len(result))
@@ -128,7 +128,7 @@ func TestNewUnsubscribes(t *testing.T) {
 	// Update the bloom filter bit array
 	_, err = http.Get(updateEndpoint)
 	if err != nil {
-		log.Printf("Error: Unable to update bit array. %v\n", err.Error())
+		log.Printf("Error: Unable to update bit array. %v\n", err)
 	}
 
 	res, _ = http.Post(membershipEndpoint, "application/json; charset=utf-8", bytes.NewBuffer(data))
@@ -189,7 +189,7 @@ func TestResubscribed(t *testing.T) {
 	// converts the decoded result back to a Result struct
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		log.Printf("Unable to unmarshal result body. %v", err.Error())
+		log.Printf("Unable to unmarshal result body. %v", err)
 	}
 
 	fmt.Printf("%d total ID:Email pairs != %d ID:Email pairs returned\n", len(dataSum[0]), len(result[0]))
