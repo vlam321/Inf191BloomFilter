@@ -20,7 +20,7 @@ services:
     links:
             - mysql
     ports:
-      - "9091:9090"
+      - "9090:9091"
     
   bloomServer2:
     image: golang
@@ -33,7 +33,7 @@ services:
     links:
       - mysql
     ports:
-      - "9092:9090"
+      - "9090:9091"
 
   bloomServer3:
     image: golang
@@ -46,7 +46,7 @@ services:
     links:
       - mysql
     ports:
-      - "9093:9090"
+      - "9090:9092"
 
   bloomServer4:
     image: golang
@@ -59,7 +59,7 @@ services:
     links:
       - mysql
     ports:
-      - "9094:9090"
+      - "9090:9093"
 
   bloomServer5:
     image: golang
@@ -72,7 +72,7 @@ services:
     links:
       - mysql
     ports:
-      - "9095:9090"
+      - "9090:9094"
 
   bloomServer6:
     image: golang
@@ -85,7 +85,7 @@ services:
     links:
       - mysql
     ports:
-      - "9096:9090"
+      - "9090:9095"
 
   bloomServer7:
     image: golang
@@ -98,7 +98,7 @@ services:
     links:
       - mysql
     ports:
-      - "9097:9090"
+      - "9090:9096"
 
   bloomServer8:
     image: golang
@@ -111,7 +111,7 @@ services:
     links:
       - mysql
     ports:
-      - "9098:9090"
+      - "9090:9097"
 
   bloomServer9:
     image: golang
@@ -124,7 +124,7 @@ services:
     links:
       - mysql
     ports:
-      - "9099:9090"
+      - "9090:9098"
 
   bloomServer10:
     image: golang
@@ -137,7 +137,7 @@ services:
     links:
       - mysql
     ports:
-      - "9100:9090"
+      - "9090:9099"
 
   graphite:
     image: hopsoft/graphite-statsd
