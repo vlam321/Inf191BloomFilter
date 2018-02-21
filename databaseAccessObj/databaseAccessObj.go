@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/spf13/viper"
 )
 
 // dbShards number of shards in database
@@ -48,14 +49,29 @@ func modId(userid int) int {
 
 // New construct Conn object
 func New() *Conn {
+	viper.SetConfigName("sqlConnDocker")
+	viper.AddConfigPath("settings")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Printf("Database access object: %v\n", err)
+	}
+
 	cfg := mysql.Config{
 		//Addr: "mysql:3306",
-		Addr:   "unsub.cqj5dn29eoyk.us-west-1.rds.amazonaws.com:3306",
-		User:   "inf191",
-		Passwd: "",
-		Net:    "tcp",
-		DBName: "unsubscribed",
+		Addr:   viper.GetString("Addr"),
+		User:   viper.GetString("User"),
+		Passwd: viper.GetString("Passwd"),
+		Net:    viper.GetString("Net"),
+		DBName: viper.GetString("DBName"),
 	}
+
+
+	log.Println(viper.GetString("Addr"))
+	log.Println(viper.GetString("User"))
+	log.Println(viper.GetString("Passwd"))
+	log.Println(viper.GetString("Net"))
+	log.Println(viper.GetString("DBName"))
 
 	// log.Println("USING DSN = ", cfg.FormatDSN())
 	db, err := sql.Open("mysql", cfg.FormatDSN())
@@ -356,7 +372,7 @@ func (conn *Conn) GetTableSize(tableNum int) int {
 	sqlStr := "SELECT COUNT(*) FROM unsub_" + strconv.Itoa(tableNum) + ";"
 	rows, err := db.Query(sqlStr)
 	if err != nil {
-		log.Printf("Error: Unable to query count. %v\n", err.Error())
+		log.Printf("Error: Unable to query count. %v\n", err)
 	}
 	defer rows.Close()
 
@@ -364,7 +380,7 @@ func (conn *Conn) GetTableSize(tableNum int) int {
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
-			log.Printf("Error: Unable to scan row counts %v\n", err.Error())
+			log.Printf("Error: Unable to scan row counts %v\n", err)
 		}
 	}
 	return count

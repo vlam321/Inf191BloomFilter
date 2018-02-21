@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+const USER_ID_LIMIT = 50;
+
 // random seed
 var seededRandPtr * rand.Rand = rand.New(rand.NewSource(
 					time.Now().UnixNano()))
@@ -65,3 +67,4 @@ func GenData(user_size, min_email_addrs, max_email_addrs int) (map[int][]string)
 	}
 	return randData
 }
+

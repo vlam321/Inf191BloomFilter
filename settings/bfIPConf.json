@@ -1,4 +1,24 @@
 {
-	"BloomFilterServer1" : "54.193.108.9",
-	"BloomFilterServer2" : "54.215.252.150"
+	"host" : "docker",
+	"dockerIP" : "192.168.99.100",
+	"BloomFilterContainer1": "BF1",
+	"BloomFilterContainer2": "BF2",
+	"BloomFilterContainer3": "BF3",
+	"BloomFilterContainer4": "BF4",
+	"BloomFilterContainer5": "BF5",
+	"BloomFilterContainer6": "BF6",
+	"BloomFilterContainer7": "BF7",
+	"BloomFilterContainer8": "BF8",
+	"BloomFilterContainer9": "BF9",
+	"BloomFilterContainer10": "BF10",
+	"BloomFilterServer1" : "9091",
+	"BloomFilterServer2" : "9092",
+	"BloomFilterServer3" : "9093",
+	"BloomFilterServer4" : "9094",
+	"BloomFilterServer5" : "9095",
+	"BloomFilterServer6" : "9096",
+	"BloomFilterServer7" : "9097",
+	"BloomFilterServer8" : "9098",
+	"BloomFilterServer9" : "9099",
+	"BloomFIlterServer10" :"9100"
 }
