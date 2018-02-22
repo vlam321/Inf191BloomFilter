@@ -49,7 +49,7 @@ func modId(userid int) int {
 
 // New construct Conn object
 func New() *Conn {
-	viper.SetConfigName("sqlConnDocker")
+	viper.SetConfigName("sqlConn")
 	viper.AddConfigPath("settings")
 
 	err := viper.ReadInConfig()
@@ -65,7 +65,6 @@ func New() *Conn {
 		Net:    viper.GetString("Net"),
 		DBName: viper.GetString("DBName"),
 	}
-
 
 	log.Println(viper.GetString("Addr"))
 	log.Println(viper.GetString("User"))
