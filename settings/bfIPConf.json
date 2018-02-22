@@ -1,5 +1,5 @@
 {
-	"host" : "docker",
+	"host" : "ecs",
 	"dockerIP" : "192.168.99.100",
 	"BloomFilterContainer1": "BF1",
 	"BloomFilterContainer2": "BF2",

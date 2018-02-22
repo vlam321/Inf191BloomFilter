@@ -7,11 +7,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 	"testing"
 
 	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
-	"github.com/vlam321/Inf191BloomFilter/bloomManager"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 )
 
@@ -55,6 +53,7 @@ func conv2Json(payload Payload) []byte {
 	return data
 }
 
+/*
 // getBFStats returns false positive rate of bloom filter
 func getBFStats(bitArrSize, dbSize uint) float64 {
 	numHashFunc := uint(10)
@@ -79,6 +78,7 @@ func benchFalsePositiveProbability(dao *databaseAccessObj.Conn, fromDBSize, toDB
 	}
 }
 
+*/
 // getUnsub
 func getUnsub(dataset map[int][]string) map[int][]string {
 	idEmailpayload := Payload{0, dataset[0]}
@@ -142,7 +142,8 @@ func main() {
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
 	dao.ClearTestResults()
-	benchFalsePositiveProbability(dao, 100000, 5000000)
+
+	// benchFalsePositiveProbability(dao, 100000, 5000000)
 
 	res := testing.Benchmark(BenchmarkUpdate1000)
 	dao.LogTestResult("update_size_timeperop", float64(1000), float64(res.NsPerOp()))

@@ -29,15 +29,15 @@ type BloomServerIPs struct {
 }
 
 type BloomContainerNames struct {
-	BloomFilterContainer1 string
-	BloomFilterContainer2 string
-	BloomFilterContainer3 string
-	BloomFilterContainer4 string
-	BloomFilterContainer5 string
-	BloomFilterContainer6 string
-	BloomFilterContainer7 string
-	BloomFilterContainer8 string
-	BloomFilterContainer9 string
+	BloomFilterContainer1  string
+	BloomFilterContainer2  string
+	BloomFilterContainer3  string
+	BloomFilterContainer4  string
+	BloomFilterContainer5  string
+	BloomFilterContainer6  string
+	BloomFilterContainer7  string
+	BloomFilterContainer8  string
+	BloomFilterContainer9  string
 	BloomFilterContainer10 string
 }
 
@@ -47,7 +47,7 @@ var routes map[int]string
 
 func retrieveEndpoint(userid int) string {
 	var endpoint string
-	if viper.GetString("host") == "ec2" {
+	if viper.GetString("host") == "ecs" {
 		endpoint = "http://" + routes[userid] + ":9090/filterUnsubscribed"
 	} else {
 		endpoint = "http://" + viper.GetString("dockerIP") + ":" + routes[userid] + "/filterUnsubscribed"
@@ -110,7 +110,7 @@ func getBloomFilterIPs() error {
 		return err
 	}
 
-	if viper.GetString("host") == "ec2" {
+	if viper.GetString("host") == "ecs" {
 		err = viper.Unmarshal(&bloomContainerNames)
 		if err != nil {
 			return err
@@ -126,7 +126,7 @@ func getBloomFilterIPs() error {
 
 func mapRouter(bloomFilterIPs BloomServerIPs) {
 	routes = make(map[int]string)
-	if viper.GetString("host") == "ec2" {
+	if viper.GetString("host") == "ecs" {
 		containerNames := structs.Values(bloomContainerNames)
 		for i := range containerNames {
 			routes[i] = containerNames[i].(string)
@@ -137,7 +137,7 @@ func mapRouter(bloomFilterIPs BloomServerIPs) {
 			routes[i] = bloomIPs[i].(string)
 		}
 	}
-	for k,v := range routes{
+	for k, v := range routes {
 		log.Printf("key: %v	 value: %v\n", k, v)
 	}
 }
