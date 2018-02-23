@@ -14,10 +14,6 @@ import (
 // dbShards number of shards in database
 const dbShards int = 15
 
-// dsn username:password@/database used to login to MySQL db
-//const dsn string = "bloom:test@/unsubscribed"
-const dsn string = "root@mysql"
-
 // Update struct that holds db object
 type Conn struct {
 	db *sql.DB
@@ -54,7 +50,7 @@ func New() *Conn {
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Printf("Database access object: %v\n", err)
+		log.Printf("Database access object: %v\n", err.Error())
 	}
 
 	cfg := mysql.Config{
@@ -65,6 +61,7 @@ func New() *Conn {
 		Net:    viper.GetString("Net"),
 		DBName: viper.GetString("DBName"),
 	}
+
 
 	log.Println(viper.GetString("Addr"))
 	log.Println(viper.GetString("User"))
@@ -148,7 +145,6 @@ func (conn *Conn) SelectRandSubset(tblNum, size int) map[int][]string {
 		err = rows.Scan(&user_id, &email)
 		if err != nil {
 			log.Printf("Error scanning row: %v\n", err)
-			return nil
 		}
 		result[user_id] = append(result[user_id], email)
 	}
@@ -285,6 +281,7 @@ func (conn *Conn) Insert(dataSet map[int][]string) {
 	for i := range sqlStrings {
 		stmt, err := db.Prepare(sqlStrings[i].sqlStr[0 : len(sqlStrings[i].sqlStr)-2])
 		if err != nil {
+		if err != nil {
 			log.Printf("Error preparing statement: %v\n", err)
 			return
 		}
@@ -371,7 +368,7 @@ func (conn *Conn) GetTableSize(tableNum int) int {
 	sqlStr := "SELECT COUNT(*) FROM unsub_" + strconv.Itoa(tableNum) + ";"
 	rows, err := db.Query(sqlStr)
 	if err != nil {
-		log.Printf("Error: Unable to query count. %v\n", err)
+		log.Printf("Error: Unable to query count. %v\n", err.Error())
 	}
 	defer rows.Close()
 
@@ -379,7 +376,7 @@ func (conn *Conn) GetTableSize(tableNum int) int {
 	for rows.Next() {
 		err = rows.Scan(&count)
 		if err != nil {
-			log.Printf("Error: Unable to scan row counts %v\n", err)
+			log.Printf("Error: Unable to scan row counts %v\n", err.Error())
 		}
 	}
 	return count
