@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/vlam321/Inf191BloomFilter/payload"
 
@@ -48,7 +49,7 @@ var routes map[int]string
 func retrieveEndpoint(userid int) string {
 	var endpoint string
 	if viper.GetString("host") == "ecs" {
-		endpoint = "http://" + routes[userid] + ":9090/filterUnsubscribed"
+		endpoint = "http://" + os.Getenv(routes[userid]) + ":9090/filterUnsubscribed"
 	} else {
 		endpoint = "http://" + viper.GetString("dockerIP") + ":" + routes[userid] + "/filterUnsubscribed"
 	}
