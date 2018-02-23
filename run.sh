@@ -8,3 +8,6 @@ if [ "$1" == "bloomFilterServer" ]; then
 	go run "cmd/$1/$1.go";
 fi
 
+if [ "$1" == "clientSimulation" ]; then
+	go run "cmd/$1/$1.go";
+fi

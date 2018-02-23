@@ -1,21 +1,21 @@
 package main
 
 import (
-	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
-	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
+	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 
 	"github.com/cyberdelia/go-metrics-graphite"
 	metrics "github.com/rcrowley/go-metrics"
 )
-
-const membershipEndpoint = "http://localhost:9090/filterUnsubscribed"
 
 type Payload struct {
 	UserId int
@@ -63,7 +63,7 @@ func checkResult(unsubbed, subbed, res map[int][]string) {
 }
 
 // attackBloomFilter hit endpoint with test data
-func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse int) {
+func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse int, routerIp string) {
 	unsubbed := dao.SelectRandSubset(0, expectedTrues)
 	subbed := bloomDataGenerator.GenData(1, expectedFalse, expectedFalse+501)
 	var dataSum []string
@@ -73,6 +73,8 @@ func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse
 	pyld := Payload{0, dataSum}
 	jsn := conv2Json(pyld)
 
+	membershipEndpoint := "http://" + routerIp + ":9090/filterUnsubscribed"
+	log.Println(membershipEndpoint)
 	res, _ := http.Post(membershipEndpoint, "application/json; charset=utf-8", bytes.NewBuffer(jsn))
 
 	defer res.Body.Close()
@@ -97,10 +99,10 @@ func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse
 }
 
 // sendRequest attackBloomFilter every ms
-func sendRequest(dao *databaseAccessObj.Conn, ms int32) {
+func sendRequest(dao *databaseAccessObj.Conn, ms int32, routerIp string) {
 	ticker := time.NewTicker(time.Duration(ms) * time.Millisecond)
 	for _ = range ticker.C {
-		attackBloomFilter(dao, 2000, 500)
+		attackBloomFilter(dao, 2000, 500, routerIp)
 	}
 }
 
@@ -109,6 +111,8 @@ func main() {
 	defer dao.CloseConnection()
 	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
-	go sendRequest(dao, 2000)
+	routerIp := os.Getenv("ROUTER_IP")
+	log.Printf("ATTACKING ROUTER @ %s", routerIp)
+	go sendRequest(dao, 2000, routerIp)
 	http.ListenAndServe(":9091", nil)
 }
