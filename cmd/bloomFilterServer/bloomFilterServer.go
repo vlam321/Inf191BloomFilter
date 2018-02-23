@@ -16,28 +16,21 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
-	graphite "github.com/marpaia/graphite-golang"
 	"github.com/spf13/viper"
 	"github.com/vlam321/Inf191BloomFilter/bloomManager"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
+	"github.com/vlam321/Inf191BloomFilter/payload"
 
 	metrics "github.com/rcrowley/go-metrics"
 )
-
-type Payload struct {
-	UserId int
-	Emails []string
-}
 
 //The bloom filter for this server
 var bf *bloomManager.BloomFilter
@@ -81,80 +74,30 @@ func handleMetric(w http.ResponseWriter, r *http.Request) {
 	log.Printf("user id  = %d\n", uid)
 }
 
-//handleFilterUnsubscripe handles when the client requests to recieve
-//those emails that are unsubscribed therefore, IN the database.
+// handleFilterUnsubscribed 
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
-	var buff []byte
-	var payload Payload
-
-	//Result struct made to carry the result of unsuscribed emails
-	type Result struct {
-		Trues []string
-	}
-
-	// log.Printf("%v", r.Body)
-	//decode byets from request body
-	err := json.NewDecoder(r.Body).Decode(&buff)
-
-	//check for error; if error write 404
-	if err != nil {
-		w.WriteHeader(404)
-		w.Write([]byte("404 - " + http.StatusText(404)))
-		// http.Error(w, err.Error(), 400)
-		// return
-	}
-
-	// converts the decoded result to a Payload struct
-	err = json.Unmarshal(buff, &payload)
-	if err != nil {
-		log.Printf("error unmashaling payload %v %s\n", err, string(buff))
-		return
-	}
-	/*
-		var emailInputs []string
-		for i := range payload.Emails {
-			emailInputs = append(emailInputs, strconv.Itoa(payload.UserId)+"_"+payload.Emails[i])
-		}
-	*/
-
-	//uses bloomManager to get the result of unsubscribed emails
-	//puts them in struct, result
-	emails := bf.GetArrayOfUnsubscribedEmails(map[int][]string{payload.UserId: payload.Emails})
-	// filteredEmails := Result{emails}
-
-	//convert result to json
-	js, err := json.Marshal(emails)
-	if err != nil {
-		log.Printf("Error marshaling filteredEmails: %v\n", err)
-		return
-	}
-
-	//write back to client
-	w.Write(js)
-}
-
-func handleTFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Error: Unable to read request data. %v\n", err.Error())
+		log.Printf("Error: Unable to read request data. %v\n", err)
 		return
 	}
 
-	var pyld Payload
-	err = json.Unmarshal(bytes, &pyld)
+	var pl payload.Payload
+	err = json.Unmarshal(bytes, &pl)
 	if err != nil {
-		log.Printf("Error: Unable to unmarshal Payload. %v\n", err.Error())
+		log.Printf("Error: Unable to unmarshal Payload. %v\n", err)
 		return
 	}
 
 	//uses bloomManager to get the result of unsubscribed emails
 	//puts them in struct, result
-	filteredResults := bf.GetArrayOfUnsubscribedEmails(map[int][]string{pyld.UserId: pyld.Emails})
+	filteredResults := bf.GetArrayOfUnsubscribedEmails(map[int][]string{pl.UserId: pl.Emails})
+	results := payload.Payload{pl.UserId, filteredResults[pl.UserId]}
 
-	jsn, err := json.Marshal(filteredResults)
+	jsn, err := json.Marshal(results)
 	if err != nil {
-		log.Printf("Error marshaling filtered emails. %v\n", err.Error())
+		log.Printf("Error marshaling filtered emails. %v\n", err)
 		return
 	}
 
@@ -171,28 +114,30 @@ func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 
 	for t := range ticker.C {
 		//Call update bloom filter
-		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(0)))
+		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(shard)))
 		bf.RepopulateBloomFilter(shard)
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
 }
 
 // setBloomFilter initialize bloom filter
-func setBloomFilter(bitArraySize, numHashFunc uint) {
-	bf = bloomManager.New(bitArraySize, numHashFunc)
+func setBloomFilter(dao *databaseAccessObj.Conn) {
+	numEmails := uint(dao.GetTableSize(shard))
+	falsePositiveProb := float64(0.001)
+	bf = bloomManager.New(numEmails, falsePositiveProb)
 }
 
 // Retrieve the IPv4 address of the current AWS EC2 instance
-func getMyIP() (myIP string, err error) {
+func getMyIP() (string, error) {
 	resp, err := http.Get("http://checkip.amazonaws.com/")
 	if err != nil {
-		return "x.x.x.x", errors.New("Unable to find IP.")
+		return "x.x.x.x", err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		return "x.x.x.x", errors.New("Unable to find IP.")
+		return "x.x.x.x", err
 	}
 	return string(body[:]), nil
 }
@@ -210,20 +155,20 @@ func mapBf2Shard() error {
 func main() {
 	bfIP, err := getMyIP()
 	if err != nil {
-		log.Printf("BloomFilter: %v\n", err.Error())
+		log.Printf("BloomFilter: %v\n", err)
 		return
 	}
 
 	err = mapBf2Shard()
 	if err != nil {
-		log.Printf("BloomFilter: %v\n", err.Error())
+		log.Printf("BloomFilter: %v\n", err)
 		return
 	}
 
 	if viper.GetString("host") == "docker" {
 		tabnum, err := strconv.Atoi(os.Getenv("SHARD"))
 		if err != nil {
-			log.Printf("Bloom Filter: %v\n", err.Error())
+			log.Printf("Bloom Filter: %v\n", err)
 		}
 		shard = tabnum
 	} else if viper.GetString("host") == "ec2" {
@@ -237,24 +182,21 @@ func main() {
 	log.Printf("HOSTING ON: %s\n", viper.GetString("host"))
 	log.Printf("USING SHARD: %d\n", shard)
 
-	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
-	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
-
-	bitArraySize, _ := strconv.ParseUint(os.Args[1], 10, 64)
-	numHashFunc, _ := strconv.ParseUint(os.Args[2], 10, 64)
-	setBloomFilter(uint(bitArraySize), uint(numHashFunc))
+	// addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
+	// go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 	// bf.RepopulateBloomFilter()
 	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
+
+	setBloomFilter(dao)
 
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
 	go updateBloomFilterBackground(dao)
 
-	// http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	// http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
-	http.HandleFunc("/filterUnsubscribed", handleTFilterUnsubscribed)
+	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.ListenAndServe(":9090", nil)
-	dao.CloseConnection()
 }
