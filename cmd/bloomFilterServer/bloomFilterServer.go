@@ -171,7 +171,7 @@ func main() {
 			log.Printf("Bloom Filter: %v\n", err)
 		}
 		shard = tabnum
-	} else if viper.GetString("host") == "ec2" {
+	} else if viper.GetString("host") == "ecs" {
 		shard = viper.GetInt(bfIP)
 	} else {
 		log.Printf("BloomFilter: Invalid host config.")
