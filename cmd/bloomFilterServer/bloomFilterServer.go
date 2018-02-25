@@ -74,7 +74,7 @@ func handleMetric(w http.ResponseWriter, r *http.Request) {
 	log.Printf("user id  = %d\n", uid)
 }
 
-// handleFilterUnsubscribed 
+// handleFilterUnsubscribed
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bytes, err := ioutil.ReadAll(r.Body)
@@ -143,7 +143,7 @@ func getMyIP() (string, error) {
 }
 
 func mapBf2Shard() error {
-	viper.SetConfigName("bfShardConf")
+	viper.SetConfigName("bfIPConf")
 	viper.AddConfigPath("settings")
 	err := viper.ReadInConfig()
 	if err != nil {
