@@ -112,11 +112,13 @@ func getBloomFilterIPs() error {
 	}
 
 	if viper.GetString("host") == "ecs" {
+		log.Printf("host: ecs")
 		err = viper.Unmarshal(&bloomContainerNames)
 		if err != nil {
 			return err
 		}
 	} else {
+		log.Printf("host:docker")
 		err = viper.Unmarshal(&bloomServerIPs)
 		if err != nil {
 			return err

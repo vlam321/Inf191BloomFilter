@@ -14,10 +14,6 @@ import (
 // dbShards number of shards in database
 const dbShards int = 15
 
-// dsn username:password@/database used to login to MySQL db
-//const dsn string = "bloom:test@/unsubscribed"
-const dsn string = "root@mysql"
-
 // Update struct that holds db object
 type Conn struct {
 	db *sql.DB
