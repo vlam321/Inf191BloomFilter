@@ -62,7 +62,6 @@ func New() *Conn {
 		DBName: viper.GetString("DBName"),
 	}
 
-
 	log.Println(viper.GetString("Addr"))
 	log.Println(viper.GetString("User"))
 	log.Println(viper.GetString("Passwd"))
@@ -280,7 +279,6 @@ func (conn *Conn) Insert(dataSet map[int][]string) {
 
 	for i := range sqlStrings {
 		stmt, err := db.Prepare(sqlStrings[i].sqlStr[0 : len(sqlStrings[i].sqlStr)-2])
-		if err != nil {
 		if err != nil {
 			log.Printf("Error preparing statement: %v\n", err)
 			return
