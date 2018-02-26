@@ -10,6 +10,8 @@ import (
 	"os"
 	"testing"
 
+	"strconv"
+
 	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 	"github.com/vlam321/Inf191BloomFilter/payload"
@@ -17,7 +19,8 @@ import (
 
 const dockerEp = "http://192.168.99.100:9090/filterUnsubscribed"
 const awsEp = "http://13.56.59.216:9090/filterUnsubscribed"
-const numShards = 2
+
+var numShards int
 
 func getUnsub(dataset map[int][]string) map[int][]string {
 	result := make(map[int][]string)
@@ -79,6 +82,10 @@ func BenchmarkUnsub50000(b *testing.B)  { benchmarkUnsub(50000, 50000, b) }
 func BenchmarkUnsub100000(b *testing.B) { benchmarkUnsub(100000, 100000, b) }
 
 func main() {
+	// go run cmd/bloomBench/bloomRouterBench/bloomRouterBench.go [number of working db shards]
+	log.Printf("starting bloom router bench\n")
+	numShards, _ = strconv.Atoi(os.Args[1])
+
 	f, err := os.Create(fmt.Sprintf("log/bench%d.txt", numShards))
 	if err != nil {
 		log.Printf("Error creating file: %v\n", err)
