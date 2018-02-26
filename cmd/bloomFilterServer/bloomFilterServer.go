@@ -185,7 +185,7 @@ func main() {
 	defer dao.CloseConnection()
 
 	setBloomFilter(dao)
-
+	bf.RepopulateBloomFilter(shard)
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
 	//go updateBloomFilterBackground(dao)

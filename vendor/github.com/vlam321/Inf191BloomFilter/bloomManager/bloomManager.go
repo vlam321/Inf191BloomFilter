@@ -66,6 +66,7 @@ func (bf *BloomFilter) RepopulateBloomFilter(tableNum int) {
 		}
 	}
 	bf.bloomFilter = newBloomFilter.Copy()
+	log.Printf("UPDATED: currently using %v hash functions and bit array len of %v.\n", bf.bloomFilter.K(), bf.bloomFilter.Cap())
 }
 
 // filter given a map[int][]string returns items that return true from bf
