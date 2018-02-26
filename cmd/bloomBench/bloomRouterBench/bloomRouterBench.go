@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"strconv"
 
@@ -79,21 +80,21 @@ func benchmarkUnsub(trueResults, falseResults int, b *testing.B) {
 
 	// skip marshal/unmarshal
 	/*
-	var pl []payload.Payload
-	var plJson [][]byte
+		var pl []payload.Payload
+		var plJson [][]byte
 	*/
 
 	for i := 0; i < numShards; i++ {
 		testData[i] = append(dao.SelectRandSubset(i, trueResults)[i], bloomDataGenerator.GenData(1, falseResults, falseResults+1)[0]...)
 		// skip marshal/unmarshal
 		/*
-		pl = append(pl, payload.Payload{i, testData[i]})
-		tempJson, err := json.Marshal(pl[i])
-		if err != nil{
-			log.Printf("error marshaling: %v\n", err)
-			return
-		}
-		plJson = append(plJson, tempJson)
+			pl = append(pl, payload.Payload{i, testData[i]})
+			tempJson, err := json.Marshal(pl[i])
+			if err != nil{
+				log.Printf("error marshaling: %v\n", err)
+				return
+			}
+			plJson = append(plJson, tempJson)
 		*/
 	}
 
@@ -116,21 +117,21 @@ func logResult(f *os.File, n int, result int64) {
 
 }
 
-func BenchmarkUnsub1000(b *testing.B)   { benchmarkUnsub(1000, 1000, b) }
-func BenchmarkUnsub2000(b *testing.B)   { benchmarkUnsub(2000, 2000, b) }
-func BenchmarkUnsub4000(b *testing.B)   { benchmarkUnsub(4000, 4000, b) }
-func BenchmarkUnsub8000(b *testing.B)   { benchmarkUnsub(8000, 8000, b) }
-func BenchmarkUnsub16000(b *testing.B)  { benchmarkUnsub(16000, 16000, b) }
-func BenchmarkUnsub50000(b *testing.B)  { benchmarkUnsub(50000, 50000, b) }
-func BenchmarkUnsub100000(b *testing.B) { benchmarkUnsub(100000, 100000, b) }
-func BenchmarkUnsub500000(b *testing.B) { benchmarkUnsub(500000, 500000, b) }
+func BenchmarkUnsub1000(b *testing.B)    { benchmarkUnsub(1000, 1000, b) }
+func BenchmarkUnsub2000(b *testing.B)    { benchmarkUnsub(2000, 2000, b) }
+func BenchmarkUnsub4000(b *testing.B)    { benchmarkUnsub(4000, 4000, b) }
+func BenchmarkUnsub8000(b *testing.B)    { benchmarkUnsub(8000, 8000, b) }
+func BenchmarkUnsub16000(b *testing.B)   { benchmarkUnsub(16000, 16000, b) }
+func BenchmarkUnsub50000(b *testing.B)   { benchmarkUnsub(50000, 50000, b) }
+func BenchmarkUnsub100000(b *testing.B)  { benchmarkUnsub(100000, 100000, b) }
+func BenchmarkUnsub500000(b *testing.B)  { benchmarkUnsub(500000, 500000, b) }
 func BenchmarkUnsub1000000(b *testing.B) { benchmarkUnsub(1000000, 1000000, b) }
 
 func main() {
 	// go run cmd/bloomBench/bloomRouterBench/bloomRouterBench.go [number of working db shards]
 	log.Printf("starting bloom router bench\n")
 	numShards, _ = strconv.Atoi(os.Args[1])
-	f, err := os.Create(fmt.Sprintf("log/bench%d.txt", numShards))
+	f, err := os.Create(fmt.Sprintf("log/bench%d_%s.txt", numShards, time.Now().Format("2006-01-02T15-04-05AM")))
 	if err != nil {
 		log.Printf("Error creating file: %v\n", err)
 		return

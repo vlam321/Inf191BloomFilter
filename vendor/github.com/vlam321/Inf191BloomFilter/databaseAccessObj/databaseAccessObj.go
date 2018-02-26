@@ -327,6 +327,17 @@ func (conn *Conn) SelectTestResults() []Metrics {
 	return result
 }
 
+func (conn *Conn) Delete(tableNum, rows int) {
+	db := conn.db
+	tableName := "unsub_" + strconv.Itoa(modId(tableNum))
+	_, err := db.Exec("DELETE FROM " + tableName + " WHERE user_id=" + strconv.Itoa(tableNum) + " LIMIT " + strconv.Itoa(rows) + ";")
+	if err != nil {
+		log.Printf("Error clearing tables: %v\n", err)
+		return
+	}
+}
+
+/*
 // Delete removes all items in db matching to dataSet
 func (conn *Conn) Delete(dataSet map[int][]string) {
 	db := conn.db
@@ -353,6 +364,7 @@ func (conn *Conn) Delete(dataSet map[int][]string) {
 		}
 	}
 }
+*/
 
 // Get the size or number of rows of the table
 func (conn *Conn) GetTableSize(tableNum int) int {
