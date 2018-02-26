@@ -185,7 +185,7 @@ func main() {
 	// addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
 	// go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
-	// bf.RepopulateBloomFilter()
+	bf.RepopulateBloomFilter()
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
 
@@ -193,7 +193,7 @@ func main() {
 
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
-	go updateBloomFilterBackground(dao)
+	//go updateBloomFilterBackground(dao)
 
 	// http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
