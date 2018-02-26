@@ -36,15 +36,14 @@ import (
 var bf *bloomManager.BloomFilter
 var shard int
 
-/*
+// FOR TESTING ONLY
 //handleUpdate will update the respective bloomFilter
 //server will keep track of when the last updated time is. to call
 //update every _ time.
 func handleUpdate(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
-	bf.RepopulateBloomFilter(viper.GetInt(bfIP))
+	bf.RepopulateBloomFilter(shard)
 }
-*/
 
 // handleMetric records metrics (temporary method?)
 func handleMetric(w http.ResponseWriter, r *http.Request) {
@@ -185,7 +184,6 @@ func main() {
 	// addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
 	// go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
-	bf.RepopulateBloomFilter()
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
 
@@ -195,7 +193,7 @@ func main() {
 	//Runs until the server is stopped
 	//go updateBloomFilterBackground(dao)
 
-	// http.HandleFunc("/update", handleUpdate)
+	http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.ListenAndServe(":9090", nil)
