@@ -152,13 +152,7 @@ func mapBf2Shard() error {
 }
 
 func main() {
-	bfIP, err := getMyIP()
-	if err != nil {
-		log.Printf("BloomFilter: %v\n", err)
-		return
-	}
-
-	err = mapBf2Shard()
+	err := mapBf2Shard()
 	if err != nil {
 		log.Printf("BloomFilter: %v\n", err)
 		return
@@ -171,7 +165,10 @@ func main() {
 		}
 		shard = tabnum
 	} else if viper.GetString("host") == "ecs" {
-		shard = viper.GetInt(bfIP)
+		shard, err = strconv.Atoi(os.Getenv("SHARD"))
+		if err != nil {
+			log.Printf("Bloom Filter: %v\n", err)
+		}
 	} else {
 		log.Printf("BloomFilter: Invalid host config.")
 		return
