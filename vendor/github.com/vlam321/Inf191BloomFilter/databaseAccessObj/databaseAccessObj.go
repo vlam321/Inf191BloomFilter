@@ -159,6 +159,7 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 					fmt.Sprintf("?"+strings.Repeat(",?", len(emails)-1)))
 
 		args := make([]interface{}, len(emails)+1)
+		args[0] = userid
 
 		for i, email := range emails{
 			args[i+1] = email
