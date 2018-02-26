@@ -62,12 +62,6 @@ func New() *Conn {
 		DBName: viper.GetString("DBName"),
 	}
 
-	log.Println(viper.GetString("Addr"))
-	log.Println(viper.GetString("User"))
-	log.Println(viper.GetString("Passwd"))
-	log.Println(viper.GetString("Net"))
-	log.Println(viper.GetString("DBName"))
-
 	// log.Println("USING DSN = ", cfg.FormatDSN())
 	db, err := sql.Open("mysql", cfg.FormatDSN())
 
