@@ -6,6 +6,8 @@ import (
 	"math"
 	"strconv"
 	"time"
+	"strings"
+	"fmt"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
@@ -151,9 +153,29 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 
 	for userid, emails := range dataSet {
 		tableName := "unsub_" + strconv.Itoa(modId(userid))
-		sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE user_id = ? and email = ?"
-		stmt, err := db.Prepare(sqlStr)
-		defer stmt.Close()
+		//sqlStr := "SELECT email FROM " + tableName + " WHERE user_id = ? and email = ?"
+		sqlStr := fmt.Sprintf("SELECT email FROM %s WHERE user_id = ? and email IN (%s)",
+					tableName,
+					fmt.Sprintf("?"+strings.Repeat(",?", len(emails)-1)))
+
+		args := make([]interface{}, len(emails)+1)
+
+		for i, email := range emails{
+			args[i+1] = email
+		}
+		rows, err := db.Query(sqlStr, args...)
+		if err != nil{
+			log.Printf("Error querying db: %v\n", err)
+		}
+		var email string
+		for rows.Next(){
+			err = rows.Scan(&email)
+			if err != nil{
+				log.Printf("Error scanning row: %v\n", err)
+			}
+			result[userid] = append(result[userid], email)
+		}
+/*
 		if err != nil {
 			log.Printf("Error preparing statement", err)
 			return nil
@@ -173,6 +195,7 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 			}
 			result[user_id] = append(result[user_id], email)
 		}
+		*/
 	}
 	return result
 }

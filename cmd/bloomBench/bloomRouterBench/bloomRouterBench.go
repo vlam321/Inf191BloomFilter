@@ -20,6 +20,7 @@ import (
 
 const dockerEp = "http://192.168.99.100:9090/filterUnsubscribed"
 const awsEp = "http://13.56.59.216:9090/filterUnsubscribed"
+const shard1 = "http://54.183.134.226:9090/filterUnsubscribed"
 
 var numShards int
 
@@ -32,7 +33,7 @@ func getUnsub(dataset map[int][]string) map[int][]string {
 			log.Printf("Error json marshaling: %v\n", err)
 			return nil
 		}
-		res, _ := http.Post(awsEp, "application/json; charset=utf-8", bytes.NewBuffer(plJson))
+		res, _ := http.Post(shard1, "application/json; charset=utf-8", bytes.NewBuffer(plJson))
 		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
