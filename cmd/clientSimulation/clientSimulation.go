@@ -112,7 +112,9 @@ func main() {
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
 	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
-	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+	// use host with the  "metrics" to differentiate different nodes
+	// host, _ := os.Hostname()
+	// go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 	routerIP := os.Getenv("ROUTER_IP")
 	userIDRange, err := strconv.Atoi(os.Getenv("USERID_RANGE"))
 	if err != nil {
