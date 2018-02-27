@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"time"
 
+	graphite "github.com/marpaia/graphite-golang"
 	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 
-	"github.com/cyberdelia/go-metrics-graphite"
 	metrics "github.com/rcrowley/go-metrics"
 )
 
