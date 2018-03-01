@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
+	graphite "github.com/marpaia/graphite-golang"
 	"github.com/spf13/viper"
 	"github.com/vlam321/Inf191BloomFilter/bloomManager"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
@@ -43,34 +45,6 @@ var shard int
 func handleUpdate(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bf.RepopulateBloomFilter(shard)
-}
-
-// handleMetric records metrics (temporary method?)
-func handleMetric(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		log.Printf("1")
-		return
-	}
-	u := r.Form["user"]
-	if len(u) == 0 {
-		log.Printf("2")
-		return
-	}
-
-	uid, err := strconv.Atoi(u[0])
-	if err != nil {
-		log.Printf("3")
-		return
-	}
-	metrics.GetOrRegisterGauge("userid.gauge", nil).Update(int64(uid))
-	metrics.GetOrRegisterCounter("userid.counter", nil).Inc(1)
-	if err != nil {
-		log.Printf("5")
-		return
-	}
-
-	log.Printf("user id  = %d\n", uid)
 }
 
 // handleFilterUnsubscribed
@@ -211,8 +185,8 @@ func main() {
 	log.Printf("HOSTING ON: %s\n", viper.GetString("host"))
 	log.Printf("USING SHARD: %d\n", shard)
 
-	// addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
-	// go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
+	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
@@ -224,7 +198,6 @@ func main() {
 	//go updateBloomFilterBackground(dao)
 
 	http.HandleFunc("/update", handleUpdate)
-	http.HandleFunc("/metric", handleMetric)
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.HandleFunc("/queryUnsubscribed", handleQueryUnsubscribed)
 	http.ListenAndServe(":9090", nil)
