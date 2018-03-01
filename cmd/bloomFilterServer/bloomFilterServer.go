@@ -105,6 +105,39 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsn)
 }
 
+// handleQueryUnsubscribed
+func handleQueryUnsubscribed(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error: Unable to read request data. %v\n", err)
+		return
+	}
+
+	var pl payload.Payload
+	err = json.Unmarshal(bytes, &pl)
+	if err != nil {
+		log.Printf("Error: Unable to unmarshal Payload. %v\n", err)
+		return
+	}
+
+	//uses bloomManager to get the result of unsubscribed emails
+	//puts them in struct, result
+	fmt.Printf("Querying database without filtering...")
+	filteredResults := bf.QueryUnsubscribed(map[int][]string{pl.UserId: pl.Emails})
+	results := payload.Payload{pl.UserId, filteredResults[pl.UserId]}
+
+	jsn, err := json.Marshal(results)
+	if err != nil {
+		log.Printf("Error marshaling filtered emails. %v\n", err)
+		return
+	}
+
+	metrics.GetOrRegisterCounter("request.numreq", nil).Inc(1)
+	//write back to client
+	w.Write(jsn)
+}
+
 //updateBloomFilterBackground manages the periodic updates of the bloom
 //filter. Update calls repopulate, creating a new updated bloom filter
 func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
@@ -193,5 +226,6 @@ func main() {
 	http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/metric", handleMetric)
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
+	http.HandleFunc("/queryUnsubscribed", handleQueryUnsubscribed)
 	http.ListenAndServe(":9090", nil)
 }

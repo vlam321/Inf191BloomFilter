@@ -93,3 +93,12 @@ func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(dataSet map[int][]string) ma
 	result := db.Select(filtered)
 	return result
 }
+
+// QueryUnsubscribed given a map[int][]string will query the db and return a map[int][]string of those
+// that exist in the db
+func (bf *BloomFilter) QueryUnsubscribed(dataSet map[int][]string) map[int][]string {
+	db := databaseAccessObj.New()
+	defer db.CloseConnection()
+	result := db.Select(dataSet)
+	return result
+}
