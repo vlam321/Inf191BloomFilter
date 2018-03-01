@@ -72,7 +72,7 @@ func handleAdd(numUser, minEmail, maxEmail int) {
 func handleDel(tableNum, numEmail int) {
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
-	dao.Delete(dao.SelectRandSubset(tableNum, numEmail))
+	dao.Delete(tableNum, numEmail)
 }
 
 // handleMakeTable creates all tables necessary in db

@@ -25,7 +25,7 @@ import (
 	"strconv"
 	"time"
 
-	graphite "github.com/marpaia/graphite-golang"
+	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/spf13/viper"
 	"github.com/vlam321/Inf191BloomFilter/bloomManager"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
@@ -37,6 +37,7 @@ import (
 //The bloom filter for this server
 var bf *bloomManager.BloomFilter
 var shard int
+var myHost string
 
 // FOR TESTING ONLY
 //handleUpdate will update the respective bloomFilter
@@ -74,7 +75,7 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metrics.GetOrRegisterCounter("request.numreq", nil).Inc(1)
+	metrics.GetOrRegisterCounter(myHost+".request.numreq", nil).Inc(1)
 	//write back to client
 	w.Write(jsn)
 }
@@ -107,7 +108,7 @@ func handleQueryUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metrics.GetOrRegisterCounter("request.numreq", nil).Inc(1)
+	metrics.GetOrRegisterCounter(myHost+".request.numreq", nil).Inc(1)
 	//write back to client
 	w.Write(jsn)
 }
@@ -120,7 +121,7 @@ func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 
 	for t := range ticker.C {
 		//Call update bloom filter
-		metrics.GetOrRegisterGauge("dbsize.gauge", nil).Update(int64(dao.GetTableSize(shard)))
+		metrics.GetOrRegisterGauge(myHost+".dbsize.gauge", nil).Update(int64(dao.GetTableSize(shard)))
 		bf.RepopulateBloomFilter(shard)
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
@@ -186,6 +187,8 @@ func main() {
 	log.Printf("USING SHARD: %d\n", shard)
 
 	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
+	host, _ := os.Hostname()
+	myHost = host
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 	dao := databaseAccessObj.New()
