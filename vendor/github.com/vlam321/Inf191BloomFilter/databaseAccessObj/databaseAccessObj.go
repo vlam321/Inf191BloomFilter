@@ -2,12 +2,12 @@ package databaseAccessObj
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"math"
 	"strconv"
-	"time"
 	"strings"
-	"fmt"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
@@ -155,47 +155,46 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 		tableName := "unsub_" + strconv.Itoa(modId(userid))
 		//sqlStr := "SELECT email FROM " + tableName + " WHERE user_id = ? and email = ?"
 		sqlStr := fmt.Sprintf("SELECT email FROM %s WHERE user_id = ? and email IN (%s)",
-					tableName,
-					fmt.Sprintf("?"+strings.Repeat(",?", len(emails)-1)))
+			tableName,
+			fmt.Sprintf("?"+strings.Repeat(",?", len(emails)-1)))
 
 		args := make([]interface{}, len(emails)+1)
-		args[0] = userid
 
-		for i, email := range emails{
+		for i, email := range emails {
 			args[i+1] = email
 		}
 		rows, err := db.Query(sqlStr, args...)
-		if err != nil{
+		if err != nil {
 			log.Printf("Error querying db: %v\n", err)
 		}
 		var email string
-		for rows.Next(){
+		for rows.Next() {
 			err = rows.Scan(&email)
-			if err != nil{
+			if err != nil {
 				log.Printf("Error scanning row: %v\n", err)
 			}
 			result[userid] = append(result[userid], email)
 		}
-/*
-		if err != nil {
-			log.Printf("Error preparing statement", err)
-			return nil
-		}
-		for e := range emails {
-			var user_id int
-			var email string
-
-			err = stmt.QueryRow(userid, emails[e]).Scan(&user_id, &email)
+		/*
 			if err != nil {
-				if err == sql.ErrNoRows {
-					continue
-				} else {
-					log.Printf("Error querying row", err)
-					return nil
-				}
+				log.Printf("Error preparing statement", err)
+				return nil
 			}
-			result[user_id] = append(result[user_id], email)
-		}
+			for e := range emails {
+				var user_id int
+				var email string
+
+				err = stmt.QueryRow(userid, emails[e]).Scan(&user_id, &email)
+				if err != nil {
+					if err == sql.ErrNoRows {
+						continue
+					} else {
+						log.Printf("Error querying row", err)
+						return nil
+					}
+				}
+				result[user_id] = append(result[user_id], email)
+			}
 		*/
 	}
 	return result
@@ -258,6 +257,45 @@ func (conn *Conn) SelectTable(tableNum int) map[int][]string {
 		result[user_id] = append(result[user_id], email)
 	}
 	return result
+}
+
+func (conn *Conn) InsertToTable(tableNum int, dataSet []string) {
+	db := conn.db
+	tableName := "unsub_" + strconv.Itoa(tableNum)
+	sqlStr := "INSERT INTO " + tableName + "(user_id, email, ts) VALUES "
+	var vals []interface{}
+	counter := 0
+
+	var sqlStrings []SqlStrVal
+
+	for i := range dataSet {
+		sqlStr += "(?, ?, CURRENT_TIMESTAMP), "
+		vals = append(vals, tableNum, dataSet[i])
+		counter += 1
+		if counter >= 32000 {
+			sqlStrings = append(sqlStrings, SqlStrVal{sqlStr, vals[0:len(vals)]})
+			sqlStr = "INSERT INTO " + tableName + "(user_id, email, ts) VALUES "
+			vals = make([]interface{}, 0)
+			counter = 0
+		}
+	}
+	if len(vals) != 0 {
+		sqlStrings = append(sqlStrings, SqlStrVal{sqlStr, vals[0:len(vals)]})
+	}
+
+	for i := range sqlStrings {
+		stmt, err := db.Prepare(sqlStrings[i].sqlStr[0 : len(sqlStrings[i].sqlStr)-2])
+		if err != nil {
+			log.Printf("Error preparing statement: %v\n", err)
+			return
+		}
+
+		_, err = stmt.Exec(sqlStrings[i].val...)
+		if err != nil {
+			log.Printf("Error executing statement: %v\n", err)
+			return
+		}
+	}
 }
 
 // Insert inserts dataSet into db

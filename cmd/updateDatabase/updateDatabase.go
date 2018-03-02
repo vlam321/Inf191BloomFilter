@@ -61,11 +61,11 @@ func handleRepopulate(numUser, minEmail, maxEmail int) {
 }
 
 // handleAdd adds random data based on input to db
-func handleAdd(numUser, minEmail, maxEmail int) {
+func handleAdd(tableNum, minEmail, maxEmail int) {
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
-	dataset := bloomDataGenerator.GenData(numUser, minEmail, maxEmail)
-	dao.Insert(dataset)
+	dataset := bloomDataGenerator.GenData(1, minEmail, maxEmail)
+	dao.InsertToTable(tableNum, dataset[0])
 }
 
 // handleDelete takes a table number and a number of rows and remove them from the db
@@ -111,7 +111,7 @@ func main() {
 			handleRepopulate(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
 			fmt.Printf("Done. \n")
 		case "add":
-			handleAdd(userInputs.numUser, userInputs.minEmail, userInputs.maxEmail)
+			handleAdd(userInputs.tableNum, userInputs.minEmail, userInputs.maxEmail)
 			fmt.Printf("Done. \n")
 		case "del":
 			handleDel(userInputs.tableNum, userInputs.numEmail)
