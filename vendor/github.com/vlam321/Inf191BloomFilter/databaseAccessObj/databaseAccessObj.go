@@ -157,9 +157,8 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 		sqlStr := fmt.Sprintf("SELECT email FROM %s WHERE user_id = ? and email IN (%s)",
 			tableName,
 			fmt.Sprintf("?"+strings.Repeat(",?", len(emails)-1)))
-
 		args := make([]interface{}, len(emails)+1)
-
+		args[0] = userid
 		for i, email := range emails {
 			args[i+1] = email
 		}

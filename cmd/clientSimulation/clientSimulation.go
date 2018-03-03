@@ -19,6 +19,8 @@ import (
 	metrics "github.com/rcrowley/go-metrics"
 )
 
+var host string
+
 type Payload struct {
 	UserId int
 	Emails []string
@@ -96,8 +98,8 @@ func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse
 		log.Printf("Error unmarshaling body: %v\n", err)
 		return
 	}
-	// metrics.GetOrRegisterGauge("request.hit", nil).Update(int64(len(result[0])))
-	// metrics.GetOrRegisterGauge("request.miss", nil).Update(int64(len(dataSum) - len(result[0])))
+	metrics.GetOrRegisterGauge(host+".request.trues", nil).Update(int64(len(result[0])))
+	metrics.GetOrRegisterGauge(host+".request.falses", nil).Update(int64(len(dataSum) - len(result[0])))
 	checkResult(unsubbed, subbed, temp.Emails)
 }
 
@@ -112,18 +114,21 @@ func sendRequest(dao *databaseAccessObj.Conn, ms int32, routerIP string, userID 
 func main() {
 	dao := databaseAccessObj.New()
 	defer dao.CloseConnection()
-	addr, _ := net.ResolveTCPAddr("tcp", "192.168.99.100:2003")
-	// use host with the  "metrics" to differentiate different nodes
-	// host, _ := os.Hostname()
+
+	addr, _ := net.ResolveTCPAddr("tcp", os.Getenv("GRAPH_IP")+":2003")
+	host, _ = os.Hostname()
+
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+
 	routerIP := os.Getenv("ROUTER_IP")
 	userIDRange, err := strconv.Atoi(os.Getenv("USERID_RANGE"))
 	if err != nil {
 		log.Printf("Client simulator: %v\n", err.Error())
 	}
-	log.Printf("ATTACKING ROUTER @ %s", routerIP)
+
+	log.Printf("ATTACKING ROUTER @ %s:9090", routerIP)
 	for i := 0; i < userIDRange; i++ {
-		go sendRequest(dao, 2000, routerIP, i)
+		go sendRequest(dao, 20, routerIP, i)
 	}
 
 	http.ListenAndServe(":9091", nil)
