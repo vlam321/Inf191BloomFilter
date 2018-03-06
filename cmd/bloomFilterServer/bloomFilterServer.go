@@ -37,7 +37,7 @@ import (
 //The bloom filter for this server
 var bf *bloomManager.BloomFilter
 var shard int
-var myHost string
+var host string
 
 // FOR TESTING ONLY
 //handleUpdate will update the respective bloomFilter
@@ -75,7 +75,7 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metrics.GetOrRegisterCounter(fmt.Sprintf("%s.request.numreq", myHost), nil).Inc(1)
+	metrics.GetOrRegisterCounter(fmt.Sprintf("request.numreq"), nil).Inc(1)
 	//write back to client
 	w.Write(jsn)
 }
@@ -108,7 +108,7 @@ func handleQueryUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metrics.GetOrRegisterCounter(fmt.Sprintf("%s.request.numreq", myHost), nil).Inc(1)
+	metrics.GetOrRegisterCounter(fmt.Sprintf("%s.request.numreq", host), nil).Inc(1)
 	//write back to client
 	w.Write(jsn)
 }
@@ -121,9 +121,19 @@ func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 
 	for t := range ticker.C {
 		//Call update bloom filter
-		metrics.GetOrRegisterGauge(fmt.Sprintf("%s.dbsize.gauge", myHost), nil).Update(int64(dao.GetTableSize(shard)))
+		metrics.GetOrRegisterGauge(fmt.Sprintf("%s.dbsize.gauge", host), nil).Update(int64(dao.GetTableSize(shard)))
 		bf.RepopulateBloomFilter(shard)
 		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
+	}
+}
+
+func graphDBSize(dao *databaseAccessObj.Conn) {
+	//Set new ticker to every 2 seconds
+	ticker := time.NewTicker(time.Second * 60)
+
+	for _ = range ticker.C {
+		//Call update bloom filter
+		metrics.GetOrRegisterGauge(fmt.Sprintf(fmt.Sprintf("%s.dbsize.gauge", host)), nil).Update(int64(dao.GetTableSize(shard)))
 	}
 }
 
@@ -187,8 +197,7 @@ func main() {
 	log.Printf("USING SHARD: %d\n", shard)
 
 	addr, _ := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:2003", os.Getenv("GRAPHITE_IP")))
-	host, _ := os.Hostname()
-	myHost = host
+	host, _ = os.Hostname()
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 	dao := databaseAccessObj.New()
@@ -199,7 +208,7 @@ func main() {
 	//Run go routine to make periodic updates
 	//Runs until the server is stopped
 	//go updateBloomFilterBackground(dao)
-
+	go graphDBSize(dao)
 	http.HandleFunc("/update", handleUpdate)
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.HandleFunc("/queryUnsubscribed", handleQueryUnsubscribed)

@@ -128,15 +128,13 @@ func main() {
 	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
 
 	endpoint = os.Getenv("ENDPOINT")
-	userIDRange, err := strconv.Atoi(os.Getenv("USERID_RANGE"))
+	userID, err := strconv.Atoi(os.Getenv("USERID"))
 	if err != nil {
 		log.Printf("Client simulator: %v\n", err.Error())
 	}
 
 	log.Printf("ATTACKING ROUTER @ %s\n", endpoint)
-	for i := 0; i < userIDRange; i++ {
-		go sendRequest(dao, 20, endpoint, i)
-	}
+	go sendRequest(dao, 1, endpoint, userID)
 
 	http.ListenAndServe(":9091", nil)
 }
