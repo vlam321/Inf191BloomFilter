@@ -49,7 +49,11 @@ var routes map[int]string
 func retrieveEndpoint(userid int) string {
 	var endpoint string
 	if viper.GetString("host") == "ecs" {
-		endpoint = "http://" + os.Getenv(routes[userid]) + ":9090/filterUnsubscribed"
+		if os.Getenv("SKIP_FILTER") == "true" {
+			endpoint = "http://" + os.Getenv(routes[userid]) + ":9090/queryUnsubscribed"
+		} else {
+			endpoint = "http://" + os.Getenv(routes[userid]) + ":9090/filterUnsubscribed"
+		}
 	} else {
 		endpoint = "http://" + viper.GetString("dockerIP") + ":" + routes[userid] + "/filterUnsubscribed"
 	}
