@@ -1,7 +1,6 @@
 package bloomManager
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 
@@ -31,6 +30,31 @@ func (bf *BloomFilter) GetStats(dbSize uint) float64 {
 	return bf.bloomFilter.EstimateFalsePositiveRate(dbSize)
 }
 
+// DetermineUpdateOrRepopulate
+func (bf *BloomFilter) DetermineUpdateOrRepopulate(tableNum int) {
+	db := databaseAccessObj.New()
+	defer db.CloseConnection()
+	currentTimestampMap := make(map[string]int)
+	currentTimestampMap = db.GetTimestampByCount(tableNum)
+	hasAdditions := false
+	hasDeletions := false
+	for k, v := range currentTimestampMap {
+		if val, ok := bf.timestampMap[k]; ok {
+			if v < val {
+				hasDeletions = true
+				break
+			}
+		} else {
+			hasAdditions = true
+		}
+	}
+	if hasDeletions {
+		bf.RepopulateBloomFilter(tableNum)
+	} else if hasAdditions {
+		bf.UpdateBloomFilter(tableNum)
+	}
+}
+
 // UpdateBloomFilter will be called if emails are added to the database
 // (unsubscribe emails), determine what is new and add to bf bit array
 func (bf *BloomFilter) UpdateBloomFilter(tableNum int) {
@@ -39,8 +63,7 @@ func (bf *BloomFilter) UpdateBloomFilter(tableNum int) {
 	currentTimestampMap := make(map[string]int)
 	currentTimestampMap = db.GetTimestampByCount(tableNum)
 	for k := range currentTimestampMap {
-		if val, ok := bf.timestampMap[k]; ok {
-			fmt.Println("Key found value is: ", val)
+		if _, ok := bf.timestampMap[k]; ok {
 		} else {
 			data := make(map[int][]string)
 			data = db.SelectByTimestamp(k, tableNum)
