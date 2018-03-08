@@ -53,7 +53,8 @@ func handleUpdateForReal(w http.ResponseWriter, r *http.Request) {
 	bf.UpdateBloomFilter(shard)
 }
 
-func handleDetermineHowToUpdate(w http.ResponseWriter, r *http.Request) {
+// handleDetermineUpdate
+func handleDetermineUpdate(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bf.DetermineUpdateOrRepopulate(shard)
 }
@@ -219,9 +220,7 @@ func main() {
 	//Runs until the server is stopped
 	//go updateBloomFilterBackground(dao)
 	go graphDBSize(dao)
-	http.HandleFunc("/update", handleUpdate)
-	http.HandleFunc("/x", handleUpdateForReal)
-	http.HandleFunc("/z", handleDetermineHowToUpdate)
+	http.HandleFunc("/update", handleDetermineUpdate)
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.HandleFunc("/queryUnsubscribed", handleQueryUnsubscribed)
 	http.ListenAndServe(":9090", nil)

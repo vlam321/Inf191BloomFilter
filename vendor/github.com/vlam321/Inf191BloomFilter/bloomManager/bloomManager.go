@@ -30,12 +30,12 @@ func (bf *BloomFilter) GetStats(dbSize uint) float64 {
 	return bf.bloomFilter.EstimateFalsePositiveRate(dbSize)
 }
 
-// DetermineUpdateOrRepopulate
+// DetermineUpdateOrRepopulate determines whether to repopulate or update and then does it
 func (bf *BloomFilter) DetermineUpdateOrRepopulate(tableNum int) {
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
 	currentTimestampMap := make(map[string]int)
-	currentTimestampMap = db.GetTimestampByCount(tableNum)
+	currentTimestampMap = db.GetCountByTimestamp(tableNum)
 	hasAdditions := false
 	hasDeletions := false
 	for k, v := range currentTimestampMap {
@@ -53,6 +53,7 @@ func (bf *BloomFilter) DetermineUpdateOrRepopulate(tableNum int) {
 	} else if hasAdditions {
 		bf.UpdateBloomFilter(tableNum)
 	}
+	bf.timestampMap = currentTimestampMap
 }
 
 // UpdateBloomFilter will be called if emails are added to the database
@@ -61,7 +62,7 @@ func (bf *BloomFilter) UpdateBloomFilter(tableNum int) {
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
 	currentTimestampMap := make(map[string]int)
-	currentTimestampMap = db.GetTimestampByCount(tableNum)
+	currentTimestampMap = db.GetCountByTimestamp(tableNum)
 	for k := range currentTimestampMap {
 		if _, ok := bf.timestampMap[k]; ok {
 		} else {
@@ -94,7 +95,7 @@ func (bf *BloomFilter) RepopulateBloomFilter(tableNum int) {
 		}
 	}
 
-	bf.timestampMap = db.GetTimestampByCount(tableNum)
+	bf.timestampMap = db.GetCountByTimestamp(tableNum)
 	bf.bloomFilter = newBloomFilter.Copy()
 	log.Printf("UPDATED: currently using %v hash functions and bit array len of %v.\n", bf.bloomFilter.K(), bf.bloomFilter.Cap())
 }

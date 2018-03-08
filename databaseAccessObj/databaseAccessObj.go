@@ -462,8 +462,8 @@ func (conn *Conn) ClearTestResults() {
 	}
 }
 
-// GetTimestampByCount gets all unique timestamps and their cout from the db
-func (conn *Conn) GetTimestampByCount(tableNum int) map[string]int {
+// GetCountByTimestamp gets all unique timestamps and their cout from the db
+func (conn *Conn) GetCountByTimestamp(tableNum int) map[string]int {
 	db := conn.db
 	sqlStr := "SELECT ts, count(*) from unsub_" + strconv.Itoa(tableNum) + " group by ts;"
 	rows, err := db.Query(sqlStr)
