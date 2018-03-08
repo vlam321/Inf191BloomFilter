@@ -24,6 +24,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	_ "net/http/pprof"
 
 	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/spf13/viper"
