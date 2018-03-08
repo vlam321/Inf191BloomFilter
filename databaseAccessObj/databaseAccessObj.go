@@ -7,7 +7,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
@@ -199,35 +198,29 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 	return result
 }
 
-// SelectByTimestamp returns items in database added after time ts
-func (conn *Conn) SelectByTimestamp(ts time.Time) map[int][]string {
+// SelectByTimestamp returns items in database added at time ts
+func (conn *Conn) SelectByTimestamp(ts string, tableNum int) map[int][]string {
 	db := conn.db
 	result := make(map[int][]string)
 
-	for i := 0; i < 15; i++ {
-		tableName := "unsub_" + strconv.Itoa(i)
-		sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE ts >= ?"
-		rows, err := db.Query(sqlStr, ts.String())
-		if err != nil {
-			if err == sql.ErrNoRows {
-				continue
-			} else {
-				log.Printf("Error query: %v\n", err)
-				return nil
-			}
-		}
+	tableName := "unsub_" + strconv.Itoa(tableNum)
+	sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE ts = ?"
+	rows, err := db.Query(sqlStr, ts)
+	if err != nil {
+		log.Printf("Error query: %v\n", err)
+		return nil
+	}
 
-		defer rows.Close()
-		for rows.Next() {
-			var user_id int
-			var email string
-			err = rows.Scan(&user_id, &email)
-			if err != nil {
-				log.Printf("Error scanning row: %v\n", err)
-				return nil
-			}
-			result[user_id] = append(result[user_id], email)
+	defer rows.Close()
+	for rows.Next() {
+		var user_id int
+		var email string
+		err = rows.Scan(&user_id, &email)
+		if err != nil {
+			log.Printf("Error scanning row: %v\n", err)
+			return nil
 		}
+		result[user_id] = append(result[user_id], email)
 	}
 	return result
 }
@@ -467,4 +460,28 @@ func (conn *Conn) ClearTestResults() {
 		log.Printf("Error clearing test results: %v\n", err)
 		return
 	}
+}
+
+// GetCountByTimestamp gets all unique timestamps and their cout from the db
+func (conn *Conn) GetCountByTimestamp(tableNum int) map[string]int {
+	db := conn.db
+	sqlStr := "SELECT ts, count(*) from unsub_" + strconv.Itoa(tableNum) + " group by ts;"
+	rows, err := db.Query(sqlStr)
+	if err != nil {
+		log.Printf("Error: Unable to query timestamp by count. %v\n", err.Error())
+	}
+	defer rows.Close()
+
+	result := make(map[string]int)
+
+	for rows.Next() {
+		var timestamp []uint8
+		var count int
+		err = rows.Scan(&timestamp, &count)
+		if err != nil {
+			log.Printf("Error scanning row: %v\n", err)
+		}
+		result[string(timestamp)] = count
+	}
+	return result
 }

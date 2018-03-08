@@ -41,12 +41,23 @@ var shard int
 var host string
 
 // FOR TESTING ONLY
-//handleUpdate will update the respective bloomFilter
-//server will keep track of when the last updated time is. to call
-//update every _ time.
+//handleUpdate will repopulate the bloom filter
 func handleUpdate(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bf.RepopulateBloomFilter(shard)
+}
+
+// FOR TESTING ONLY
+//handleUpdateForReal will update the bloom filter
+func handleUpdateForReal(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
+	bf.UpdateBloomFilter(shard)
+}
+
+// handleDetermineUpdate
+func handleDetermineUpdate(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
+	bf.DetermineUpdateOrRepopulate(shard)
 }
 
 // handleFilterUnsubscribed
@@ -210,7 +221,7 @@ func main() {
 	//Runs until the server is stopped
 	//go updateBloomFilterBackground(dao)
 	go graphDBSize(dao)
-	http.HandleFunc("/update", handleUpdate)
+	http.HandleFunc("/update", handleDetermineUpdate)
 	http.HandleFunc("/filterUnsubscribed", handleFilterUnsubscribed)
 	http.HandleFunc("/queryUnsubscribed", handleQueryUnsubscribed)
 	http.ListenAndServe(":9090", nil)

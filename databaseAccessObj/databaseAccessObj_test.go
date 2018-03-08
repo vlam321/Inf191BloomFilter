@@ -41,7 +41,7 @@ func TestSelectRandSubset(t *testing.T) {
 	defer db.CloseConnection()
 	db.Clear()
 	testData := make(map[int][]string)
-	testData[0] = [] string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"}
+	testData[0] = []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l"}
 	db.Insert(testData)
 	result := db.SelectRandSubset(0, 4)
 	assert.Equal(t, 4, len(result[0]))
@@ -83,4 +83,3 @@ func TestSelectByTimestamp(t *testing.T) {
 	result := db.SelectByTimestamp(ts)
 	assert.Equal(t, testData2, result)
 }
-
