@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	_ "net/http/pprof"
 
 	"github.com/vlam321/Inf191BloomFilter/payload"
 
