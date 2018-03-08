@@ -7,7 +7,6 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
@@ -200,13 +199,13 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 }
 
 // SelectByTimestamp returns items in database added at time ts
-func (conn *Conn) SelectByTimestamp(ts time.Time, tableNum int) map[int][]string {
+func (conn *Conn) SelectByTimestamp(ts string, tableNum int) map[int][]string {
 	db := conn.db
 	result := make(map[int][]string)
 
 	tableName := "unsub_" + strconv.Itoa(tableNum)
 	sqlStr := "SELECT user_id, email FROM " + tableName + " WHERE ts = ?"
-	rows, err := db.Query(sqlStr, ts.String())
+	rows, err := db.Query(sqlStr, ts)
 	if err != nil {
 		log.Printf("Error query: %v\n", err)
 		return nil
@@ -464,7 +463,7 @@ func (conn *Conn) ClearTestResults() {
 }
 
 // GetTimestampByCount gets all unique timestamps and their cout from the db
-func (conn *Conn) GetTimestampByCount(tableNum int) map[time.Time]int {
+func (conn *Conn) GetTimestampByCount(tableNum int) map[string]int {
 	db := conn.db
 	sqlStr := "SELECT ts, count(*) from unsub_" + strconv.Itoa(tableNum) + " group by ts;"
 	rows, err := db.Query(sqlStr)
@@ -473,16 +472,16 @@ func (conn *Conn) GetTimestampByCount(tableNum int) map[time.Time]int {
 	}
 	defer rows.Close()
 
-	result := make(map[time.Time]int)
+	result := make(map[string]int)
 
 	for rows.Next() {
-		var timestamp time.Time
+		var timestamp []uint8
 		var count int
 		err = rows.Scan(&timestamp, &count)
 		if err != nil {
 			log.Printf("Error scanning row: %v\n", err)
 		}
-		result[timestamp] = count
+		result[string(timestamp)] = count
 	}
 	return result
 }

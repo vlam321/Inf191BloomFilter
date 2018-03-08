@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"time"
 
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
 
@@ -16,14 +15,14 @@ const dbShards = 15
 // BloomFilter struct holds the pointer to the bloomFilter object
 type BloomFilter struct {
 	bloomFilter  *bloom.BloomFilter
-	timestampMap map[time.Time]int
+	timestampMap map[string]int
 }
 
 // New is called to instantiate a new BloomFilter object
 func New(numEmail uint, fpProb float64) *BloomFilter {
 	bloomFilter := bloom.NewWithEstimates(numEmail, fpProb)
 	log.Printf("BLOOM STATS: %d HASH FUNCTIONS | BIT ARRAY LEN OF %d", bloomFilter.K(), bloomFilter.Cap())
-	timestampMap := make(map[time.Time]int)
+	timestampMap := make(map[string]int)
 	return &BloomFilter{bloomFilter, timestampMap}
 }
 
@@ -37,7 +36,7 @@ func (bf *BloomFilter) GetStats(dbSize uint) float64 {
 func (bf *BloomFilter) UpdateBloomFilter(tableNum int) {
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
-	currentTimestampMap := make(map[time.Time]int)
+	currentTimestampMap := make(map[string]int)
 	currentTimestampMap = db.GetTimestampByCount(tableNum)
 	for k := range currentTimestampMap {
 		if val, ok := bf.timestampMap[k]; ok {
