@@ -1,7 +1,6 @@
 package main
 
 import (
-	"Inf191BloomFilter/payload"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
+	"github.com/vlam321/Inf191BloomFilter/payload"
 
 	"github.com/cyberdelia/go-metrics-graphite"
 	metrics "github.com/rcrowley/go-metrics"

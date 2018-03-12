@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -10,7 +9,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/fatih/structs"
 	"github.com/spf13/viper"
@@ -64,25 +62,32 @@ func retrieveEndpoint(userid int) string {
 
 func handleRoute(w http.ResponseWriter, r *http.Request) {
 	// read request data
-	bbytes, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("Error: Unable to read request data. %v\n", err)
-		return
-	}
-
-	vals := strings.Split(string(bbytes), ",")
-	var userid int
-	for i := range vals {
-		if strings.Contains(vals[i], "UserId") {
-			userid, err = strconv.Atoi(re.FindString(vals[i]))
-			if err != nil {
-				log.Printf("strconv error: %v\n", err)
-				return
-			}
-			break
+	/*
+		bbytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("Error: Unable to read request data. %v\n", err)
+			return
 		}
+	*/
+	userid, err := strconv.Atoi(r.Header.Get("userid"))
+	if err != nil {
+		log.Printf("String conversion error. %v\n", err.Error())
 	}
 
+	/*
+		vals := strings.Split(string(bbytes), ",")
+		var userid int
+		for i := range vals {
+			if strings.Contains(vals[i], "UserId") {
+				userid, err = strconv.Atoi(re.FindString(vals[i]))
+				if err != nil {
+					log.Printf("strconv error: %v\n", err)
+					return
+				}
+				break
+			}
+		}
+	*/
 	/*
 		// unmarshal payload
 		var pl payload.Payload
@@ -95,17 +100,22 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 		// determine endpoint based on host
 		endpoint := retrieveEndpoint(pl.UserId)
 	*/
+
 	endpoint := retrieveEndpoint(userid)
 	log.Printf("Request sent to: %s\n", endpoint)
+	http.Redirect(w, r, endpoint, http.StatusTemporaryRedirect)
 
-	// make request to endpoint
-	res, _ := http.Post(endpoint, "application/json; charset=utf-8", bytes.NewBuffer(bbytes))
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Printf("Router: error reading response from bloom filter. %v\n", err)
-	}
-	w.Write(body)
+	/*
+		// make request to endpoint
+		res, _ := http.Post(endpoint, "application/json; charset=utf-8", bytes.NewBuffer(bbytes))
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			log.Printf("Router: error reading response from bloom filter. %v\n", err)
+		}
+	*/
+	// w.Write(body)
+
 }
 
 // getMyIP() retrieve IP on local host
