@@ -21,10 +21,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strconv"
 	"time"
-	_ "net/http/pprof"
 
 	"github.com/cyberdelia/go-metrics-graphite"
 	"github.com/spf13/viper"
@@ -40,29 +40,15 @@ var bf *bloomManager.BloomFilter
 var shard int
 var host string
 
-// FOR TESTING ONLY
-//handleUpdate will repopulate the bloom filter
-func handleUpdate(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
-	bf.RepopulateBloomFilter(shard)
-}
-
-// FOR TESTING ONLY
-//handleUpdateForReal will update the bloom filter
-func handleUpdateForReal(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
-	bf.UpdateBloomFilter(shard)
-}
-
 // handleDetermineUpdate
 func handleDetermineUpdate(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
+	log.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bf.DetermineUpdateOrRepopulate(shard)
 }
 
 // handleFilterUnsubscribed
 func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
+	log.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error: Unable to read request data. %v\n", err)
@@ -87,14 +73,14 @@ func handleFilterUnsubscribed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metrics.GetOrRegisterCounter(fmt.Sprintf("request.numreq"), nil).Inc(1)
+	metrics.GetOrRegisterCounter(fmt.Sprintf("%s.request.numreq", host), nil).Inc(1)
 	//write back to client
 	w.Write(jsn)
 }
 
 // handleQueryUnsubscribed
 func handleQueryUnsubscribed(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
+	log.Printf("Received request: %v %v %v\n", r.Method, r.URL, r.Proto)
 	bytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Error: Unable to read request data. %v\n", err)
@@ -110,7 +96,7 @@ func handleQueryUnsubscribed(w http.ResponseWriter, r *http.Request) {
 
 	//uses bloomManager to get the result of unsubscribed emails
 	//puts them in struct, result
-	fmt.Printf("Querying database without filtering...")
+	log.Printf("Querying database without filtering.")
 	filteredResults := bf.QueryUnsubscribed(map[int][]string{pl.UserId: pl.Emails})
 	results := payload.Payload{pl.UserId, filteredResults[pl.UserId]}
 
@@ -135,7 +121,7 @@ func updateBloomFilterBackground(dao *databaseAccessObj.Conn) {
 		//Call update bloom filter
 		metrics.GetOrRegisterGauge(fmt.Sprintf("%s.dbsize.gauge", host), nil).Update(int64(dao.GetTableSize(shard)))
 		bf.RepopulateBloomFilter(shard)
-		fmt.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
+		log.Println("Bloom Filter Updated at: ", t.Format("2006-01-02 3:4:5 PM"))
 	}
 }
 

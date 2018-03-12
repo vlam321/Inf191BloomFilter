@@ -2,15 +2,15 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	_ "net/http/pprof"
-
-	"github.com/vlam321/Inf191BloomFilter/payload"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/fatih/structs"
 	"github.com/spf13/viper"
@@ -46,6 +46,7 @@ type BloomContainerNames struct {
 var bloomServerIPs BloomServerIPs
 var bloomContainerNames BloomContainerNames
 var routes map[int]string
+var re *regexp.Regexp
 
 func retrieveEndpoint(userid int) string {
 	var endpoint string
@@ -69,16 +70,32 @@ func handleRoute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// unmarshal payload
-	var pl payload.Payload
-	err = json.Unmarshal(bbytes, &pl)
-	if err != nil {
-		log.Printf("Error: Unable to unmarshal Payload. %v\n", err)
-		return
+	vals := strings.Split(string(bbytes), ",")
+	var userid int
+	for i := range vals {
+		if strings.Contains(vals[i], "UserId") {
+			userid, err = strconv.Atoi(re.FindString(vals[i]))
+			if err != nil {
+				log.Printf("strconv error: %v\n", err)
+				return
+			}
+			break
+		}
 	}
 
-	// determine endpoint based on host
-	endpoint := retrieveEndpoint(pl.UserId)
+	/*
+		// unmarshal payload
+		var pl payload.Payload
+		err = json.Unmarshal(bbytes, &pl)
+		if err != nil {
+			log.Printf("Error: Unable to unmarshal Payload. %v\n", err)
+			return
+		}
+
+		// determine endpoint based on host
+		endpoint := retrieveEndpoint(pl.UserId)
+	*/
+	endpoint := retrieveEndpoint(userid)
 	log.Printf("Request sent to: %s\n", endpoint)
 
 	// make request to endpoint
@@ -133,6 +150,7 @@ func getBloomFilterIPs() error {
 }
 
 func mapRouter(bloomFilterIPs BloomServerIPs) {
+	re = regexp.MustCompile("[0-9]+")
 	routes = make(map[int]string)
 	if viper.GetString("host") == "ecs" {
 		containerNames := structs.Values(bloomContainerNames)

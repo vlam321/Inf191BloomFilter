@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
-	"github.com/vlam321/Inf191BloomFilter/payload"
 
 	"github.com/cyberdelia/go-metrics-graphite"
 	metrics "github.com/rcrowley/go-metrics"
@@ -72,9 +70,10 @@ func checkResult(unsubbed, subbed map[int][]string, res []string) {
 func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse int, endpoint string, userID int) {
 
 	unsubbed := dao.SelectRandSubset(userID, expectedTrues)
-	subbed := bloomDataGenerator.GenData(1, expectedFalse, expectedFalse+501)
+	subbed := bloomDataGenerator.GenData(1, expectedFalse, expectedFalse+1)
+
 	var dataSum []string
-	dataSum = append(dataSum, unsubbed[0]...)
+	dataSum = append(dataSum, unsubbed[userID]...)
 	dataSum = append(dataSum, subbed[0]...)
 
 	pyld := Payload{userID, dataSum}
@@ -84,30 +83,37 @@ func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse
 	// log.Println(membershipEndpoint)
 
 	start := time.Now()
-	res, _ := http.Post(endpoint, "application/json; charset=utf-8", bytes.NewBuffer(jsn))
+	_, err := http.Post(endpoint, "application/json; charset=utf-8", bytes.NewBuffer(jsn))
 	latency := time.Since(start).Nanoseconds() / 1000000
 
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		log.Printf("Error reading body: %v\n", err)
+		log.Printf("Error in post request: %v\n", err)
 		return
 	}
 
 	log.Printf("Sent request to filter with payload size of %d emails (expected reponse size = %d emails).", len(dataSum), expectedTrues)
 
-	//var result map[int][]string
-	var result payload.Payload
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		log.Printf("Error unmarshaling body: %v\n", err)
-		return
-	}
+	/*
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			log.Printf("Error reading body: %v\n", err)
+			return
+		}
 
+
+		//var result map[int][]string
+		var result payload.Payload
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			log.Printf("Error unmarshaling body: %v\n", err)
+			return
+		}
+	*/
 	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.latency", host), nil).Update(int64(latency))
-	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.trues", host), nil).Update(int64(len(result.Emails)))
-	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.falses", host), nil).Update(int64(len(dataSum) - len(result.Emails)))
-	checkResult(unsubbed, subbed, result.Emails)
+	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.trues", host), nil).Update(int64(len(unsubbed[userID])))
+	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.falses", host), nil).Update(int64(len(dataSum) - len(unsubbed[userID])))
+	// checkResult(unsubbed, subbed, result.Emails)
 }
 
 // sendRequest attackBloomFilter every ms

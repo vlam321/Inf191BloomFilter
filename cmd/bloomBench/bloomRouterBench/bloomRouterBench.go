@@ -18,7 +18,7 @@ import (
 	"github.com/vlam321/Inf191BloomFilter/payload"
 )
 
-const dockerEp = "http://192.168.99.100:9090/filterUnsubscribed"
+const dockerEp = "http://192.168.99.103:9090/filterUnsubscribed"
 const awsEp = "http://54.183.120.79:9090/filterUnsubscribed"
 const shard1 = "http://13.56.155.181:9090/filterUnsubscribed"
 
@@ -33,7 +33,7 @@ func getUnsub(dataset map[int][]string) map[int][]string {
 			log.Printf("Error json marshaling: %v\n", err)
 			return nil
 		}
-		res, _ := http.Post(awsEp, "application/json; charset=utf-8", bytes.NewBuffer(plJson))
+		res, _ := http.Post(dockerEp, "application/json; charset=utf-8", bytes.NewBuffer(plJson))
 		defer res.Body.Close()
 		body, err := ioutil.ReadAll(res.Body)
 		if err != nil {
@@ -118,15 +118,12 @@ func logResult(f *os.File, n int, result int64) {
 
 }
 
-func BenchmarkUnsub1000(b *testing.B)    { benchmarkUnsub(1000, 1000, b) }
-func BenchmarkUnsub2000(b *testing.B)    { benchmarkUnsub(2000, 2000, b) }
-func BenchmarkUnsub4000(b *testing.B)    { benchmarkUnsub(4000, 4000, b) }
-func BenchmarkUnsub8000(b *testing.B)    { benchmarkUnsub(8000, 8000, b) }
-func BenchmarkUnsub16000(b *testing.B)   { benchmarkUnsub(16000, 16000, b) }
-func BenchmarkUnsub50000(b *testing.B)   { benchmarkUnsub(50000, 50000, b) }
-func BenchmarkUnsub100000(b *testing.B)  { benchmarkUnsub(100000, 100000, b) }
-func BenchmarkUnsub500000(b *testing.B)  { benchmarkUnsub(500000, 500000, b) }
-func BenchmarkUnsub1000000(b *testing.B) { benchmarkUnsub(1000000, 1000000, b) }
+func BenchmarkUnsub1000(b *testing.B)  { benchmarkUnsub(1000, 1000, b) }
+func BenchmarkUnsub2000(b *testing.B)  { benchmarkUnsub(2000, 2000, b) }
+func BenchmarkUnsub4000(b *testing.B)  { benchmarkUnsub(4000, 4000, b) }
+func BenchmarkUnsub8000(b *testing.B)  { benchmarkUnsub(8000, 8000, b) }
+func BenchmarkUnsub16000(b *testing.B) { benchmarkUnsub(16000, 16000, b) }
+func BenchmarkUnsub50000(b *testing.B) { benchmarkUnsub(50000, 50000, b) }
 
 func main() {
 	// go run cmd/bloomBench/bloomRouterBench/bloomRouterBench.go [number of working db shards]
@@ -163,13 +160,4 @@ func main() {
 	res = testing.Benchmark(BenchmarkUnsub50000)
 	log.Println(res.NsPerOp())
 	logResult(f, 50000, res.NsPerOp())
-	res = testing.Benchmark(BenchmarkUnsub100000)
-	log.Println(res.NsPerOp())
-	logResult(f, 100000, res.NsPerOp())
-	res = testing.Benchmark(BenchmarkUnsub500000)
-	log.Println(res.NsPerOp())
-	logResult(f, 500000, res.NsPerOp())
-	res = testing.Benchmark(BenchmarkUnsub1000000)
-	log.Println(res.NsPerOp())
-	logResult(f, 1000000, res.NsPerOp())
 }
