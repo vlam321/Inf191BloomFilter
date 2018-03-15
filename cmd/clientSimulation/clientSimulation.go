@@ -4,17 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/vlam321/Inf191BloomFilter/bloomDataGenerator"
 	"github.com/vlam321/Inf191BloomFilter/databaseAccessObj"
-	"github.com/vlam321/Inf191BloomFilter/payload"
 
 	"github.com/cyberdelia/go-metrics-graphite"
 	metrics "github.com/rcrowley/go-metrics"
@@ -84,7 +83,6 @@ func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse
 	// membershipEndpoint := "http://" + endpoint + ":9090/filterUnsubscribed"
 	// log.Println(membershipEndpoint)
 
-	start := time.Now()
 	client := &http.Client{}
 	//_, err := http.Post(endpoint, "application/json; charset=utf-8", bytes.NewBuffer(jsn))
 	r, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsn))
@@ -94,7 +92,8 @@ func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse
 	}
 	r.Header.Set("userid", strconv.Itoa(pyld.UserId))
 	r.Header.Add("Content-Type", "application/json; charset=utf-8")
-	res, err := client.Do(r)
+	start := time.Now()
+	_, err = client.Do(r)
 	latency := time.Since(start).Nanoseconds() / 1000000
 
 	if err != nil {
@@ -104,21 +103,22 @@ func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse
 
 	log.Printf("Sent request to filter with payload size of %d emails (expected reponse size = %d emails).", len(dataSum), expectedTrues)
 
-	defer res.Body.Close()
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		log.Printf("Error reading body: %v\n", err)
-		return
-	}
+	/*
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			log.Printf("Error reading body: %v\n", err)
+			return
+		}
 
-	//var result map[int][]string
-	var result payload.Payload
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		log.Printf("Error unmarshaling body: %v\n", err)
-		return
-	}
-
+		//var result map[int][]string
+		var result payload.Payload
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			log.Printf("Error unmarshaling body: %v\n", err)
+			return
+		}
+	*/
 	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.latency", host), nil).Update(int64(latency))
 	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.trues", host), nil).Update(int64(len(unsubbed[userID])))
 	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.falses", host), nil).Update(int64(len(dataSum) - len(unsubbed[userID])))
