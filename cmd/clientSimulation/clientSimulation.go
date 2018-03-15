@@ -113,14 +113,14 @@ func attackBloomFilter(expectedTrues, expectedFalse int, endpoint string, userID
 	r.Header.Set("userid", strconv.Itoa(pyld.UserId))
 	r.Header.Add("Content-Type", "application/json; charset=utf-8")
 	start := time.Now()
-	_, err = client.Do(r)
+	res, err := client.Do(r)
 	latency := time.Since(start).Nanoseconds() / 1000000
 
 	if err != nil {
 		log.Printf("Error in post request: %v\n", err)
 		return
 	}
-
+	defer res.Body.Close()
 	log.Printf("Sent request to filter with payload size of %d emails (expected reponse size = %d emails).", len(dataSum), expectedTrues)
 	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.latency", host), nil).Update(int64(latency))
 	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.trues", host), nil).Update(int64(len(unsubbed)))
@@ -181,7 +181,7 @@ func main() {
 
 	// Send Request to bloom router
 	log.Printf("ATTACKING ROUTER @ %s\n", endpoint)
-	go sendRequest(1, endpoint, userID)
+	go sendRequest(500, endpoint, userID)
 
 	http.ListenAndServe(":9091", nil)
 }

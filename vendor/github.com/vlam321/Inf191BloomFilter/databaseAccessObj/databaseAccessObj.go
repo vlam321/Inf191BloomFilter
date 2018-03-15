@@ -173,6 +173,7 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 			}
 			result[userid] = append(result[userid], email)
 		}
+		defer rows.Close()
 		/*
 			if err != nil {
 				log.Printf("Error preparing statement", err)
