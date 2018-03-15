@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -21,6 +22,8 @@ import (
 
 var endpoint string
 var host string
+var trueValues []string
+var falseValues []string
 
 type Payload struct {
 	UserId int
@@ -37,6 +40,7 @@ func conv2Json(payload Payload) []byte {
 	return data
 }
 
+/* LEGACY CODE
 func makeMap(emails []string) map[string]bool {
 	quickMap := make(map[string]bool)
 	for i := range emails {
@@ -66,25 +70,41 @@ func checkResult(unsubbed, subbed map[int][]string, res []string) {
 	metrics.GetOrRegisterGauge("result.hit", nil).Update(int64(hit))
 	metrics.GetOrRegisterGauge("result.miss", nil).Update(int64(miss))
 }
+*/
+
+// Takes a string array and shuffle the value
+func Shuffle(a []string) {
+	rand.Seed(time.Now().UnixNano())
+	for i := range a {
+		j := rand.Intn(i + 1)
+		a[i], a[j] = a[j], a[i]
+	}
+}
+
+// takes a string array, shuffles it's value and
+// returns a random subset with a specific amount of values
+func getRandSubset(a []string, n int) []string {
+	Shuffle(a)
+	return a[0:n]
+
+}
 
 // attackBloomFilter hit endpoint with test data
-func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse int, endpoint string, userID int) {
+func attackBloomFilter(expectedTrues, expectedFalse int, endpoint string, userID int) {
 
-	unsubbed := dao.SelectRandSubset(userID, expectedTrues)
-	subbed := bloomDataGenerator.GenData(1, expectedFalse, expectedFalse+1)
+	// Get random subset of trueValues and falseValues
+	unsubbed := getRandSubset(trueValues, expectedTrues)
+	subbed := getRandSubset(falseValues, expectedFalse)
 
 	var dataSum []string
-	dataSum = append(dataSum, unsubbed[userID]...)
-	dataSum = append(dataSum, subbed[0]...)
+	dataSum = append(dataSum, unsubbed...)
+	dataSum = append(dataSum, subbed...)
 
 	pyld := Payload{userID, dataSum}
 	jsn := conv2Json(pyld)
 
-	// membershipEndpoint := "http://" + endpoint + ":9090/filterUnsubscribed"
-	// log.Println(membershipEndpoint)
-
 	client := &http.Client{}
-	//_, err := http.Post(endpoint, "application/json; charset=utf-8", bytes.NewBuffer(jsn))
+
 	r, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsn))
 	if err != nil {
 		log.Printf("Error in post request: %v\n", err)
@@ -102,54 +122,66 @@ func attackBloomFilter(dao *databaseAccessObj.Conn, expectedTrues, expectedFalse
 	}
 
 	log.Printf("Sent request to filter with payload size of %d emails (expected reponse size = %d emails).", len(dataSum), expectedTrues)
-
-	/*
-		defer res.Body.Close()
-		body, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			log.Printf("Error reading body: %v\n", err)
-			return
-		}
-
-		//var result map[int][]string
-		var result payload.Payload
-		err = json.Unmarshal(body, &result)
-		if err != nil {
-			log.Printf("Error unmarshaling body: %v\n", err)
-			return
-		}
-	*/
 	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.latency", host), nil).Update(int64(latency))
-	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.trues", host), nil).Update(int64(len(unsubbed[userID])))
-	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.falses", host), nil).Update(int64(len(dataSum) - len(unsubbed[userID])))
-	// checkResult(unsubbed, subbed, result.Emails)
+	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.trues", host), nil).Update(int64(len(unsubbed)))
+	metrics.GetOrRegisterGauge(fmt.Sprintf("%s.request.falses", host), nil).Update(int64(len(subbed)))
+
+	/* LEGACY CODE
+	defer res.Body.Close()
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Printf("Error reading body: %v\n", err)
+		return
+	}
+
+	//var result map[int][]string
+	var result payload.Payload
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		log.Printf("Error unmarshaling body: %v\n", err)
+		return
+	}
+
+	checkResult(unsubbed, subbed, result.Emails)
+	*/
 }
 
 // sendRequest attackBloomFilter every ms
-func sendRequest(dao *databaseAccessObj.Conn, ms int32, endpoint string, userID int) {
+func sendRequest(ms int32, endpoint string, userID int) {
 	ticker := time.NewTicker(time.Duration(ms) * time.Millisecond)
 	for _ = range ticker.C {
-		attackBloomFilter(dao, 500, 500, endpoint, userID)
+		attackBloomFilter(500, 500, endpoint, userID)
 	}
 }
 
 func main() {
-	dao := databaseAccessObj.New()
-	defer dao.CloseConnection()
 
-	addr, _ := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:2003", os.Getenv("GRAPHITE_IP")))
-	host, _ = os.Hostname()
-
-	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
-
+	// Get neccessary environment variables
 	endpoint = os.Getenv("ENDPOINT")
 	userID, err := strconv.Atoi(os.Getenv("USERID"))
 	if err != nil {
 		log.Printf("Client simulator: %v\n", err.Error())
 	}
 
+	// Open new DB connection
+	dao := databaseAccessObj.New()
+	defer dao.CloseConnection()
+
+	// Grab 5000 known unsubbed emails (trueValues) from DB
+	// Generate 5000 new random emails to represent subbed emails (falseValues)
+	trueValues = dao.SelectRandSubset(userID, 5000)[userID]
+	falseValues = bloomDataGenerator.GenData(1, 5000, 5001)[0]
+
+	// Assign dependent values to run graphite
+	addr, _ := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:2003", os.Getenv("GRAPHITE_IP")))
+	host, _ = os.Hostname()
+
+	// Run graphite
+	go graphite.Graphite(metrics.DefaultRegistry, 10e9, "metrics", addr)
+
+	// Send Request to bloom router
 	log.Printf("ATTACKING ROUTER @ %s\n", endpoint)
-	go sendRequest(dao, 1, endpoint, userID)
+	go sendRequest(1, endpoint, userID)
 
 	http.ListenAndServe(":9091", nil)
 }
