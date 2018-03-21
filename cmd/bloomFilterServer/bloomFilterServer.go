@@ -96,7 +96,6 @@ func handleQueryUnsubscribed(w http.ResponseWriter, r *http.Request) {
 
 	//uses bloomManager to get the result of unsubscribed emails
 	//puts them in struct, result
-	log.Printf("Querying database without filtering.")
 	filteredResults := bf.QueryUnsubscribed(map[int][]string{pl.UserId: pl.Emails})
 	results := payload.Payload{pl.UserId, filteredResults[pl.UserId]}
 

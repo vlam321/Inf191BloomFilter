@@ -52,9 +52,9 @@ func makeMap(emails []string) map[string]bool {
 // checkResult takes in the expected and actual values and
 // calculate the hit and miss ratio and sends the data to
 // graphite
-func checkResult(unsubbed, subbed map[int][]string, res []string) {
-	unsubbedMap := makeMap(unsubbed[0])
-	subbedMap := makeMap(subbed[0])
+func checkResult(unsubbed, subbed []string, res []string) {
+	unsubbedMap := makeMap(unsubbed)
+	subbedMap := makeMap(subbed)
 	hit := 0
 	miss := 0
 	for i := range res {
@@ -67,9 +67,11 @@ func checkResult(unsubbed, subbed map[int][]string, res []string) {
 	if len(unsubbedMap) > len(res) {
 		miss += len(unsubbedMap) - len(res)
 	}
-	metrics.GetOrRegisterGauge("result.hit", nil).Update(int64(hit))
-	metrics.GetOrRegisterGauge("result.miss", nil).Update(int64(miss))
+	log.Printf("GOT %d CORRECT and %d INCORRECT IN RESULT\n", hit, miss)
+	//metrics.GetOrRegisterGauge("result.hit", nil).Update(int64(hit))
+	//metrics.GetOrRegisterGauge("result.miss", nil).Update(int64(miss))
 }
+
 */
 
 // Takes a string array and shuffle the value
@@ -128,6 +130,7 @@ func attackBloomFilter(expectedTrues, expectedFalse int, endpoint string, userID
 
 	/* LEGACY CODE
 	defer res.Body.Close()
+
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Printf("Error reading body: %v\n", err)
@@ -147,10 +150,10 @@ func attackBloomFilter(expectedTrues, expectedFalse int, endpoint string, userID
 }
 
 // sendRequest attackBloomFilter every ms
-func sendRequest(ms int32, endpoint string, userID int) {
+func sendRequest(expectedTrues, expectedFalses int, ms int32, endpoint string, userID int) {
 	ticker := time.NewTicker(time.Duration(ms) * time.Millisecond)
 	for _ = range ticker.C {
-		attackBloomFilter(500, 500, endpoint, userID)
+		attackBloomFilter(expectedTrues, expectedFalses, endpoint, userID)
 	}
 }
 
@@ -163,14 +166,31 @@ func main() {
 		log.Printf("Client simulator: %v\n", err.Error())
 	}
 
+	expectedTrues, err := strconv.Atoi(os.Getenv("TRUES"))
+	if err != nil {
+		log.Printf("Client simulator: %v\n", err.Error())
+	}
+
+	expectedFalses, err := strconv.Atoi(os.Getenv("FALSES"))
+	if err != nil {
+		log.Printf("Client simulator: %v\n", err.Error())
+	}
+
+	reqRate, err := strconv.Atoi(os.Getenv("RATE"))
+	if err != nil {
+		log.Printf("Client simulator: %v\n", err.Error())
+	}
+
 	// Open new DB connection
 	dao := databaseAccessObj.New()
-	defer dao.CloseConnection()
 
 	// Grab 5000 known unsubbed emails (trueValues) from DB
 	// Generate 5000 new random emails to represent subbed emails (falseValues)
-	trueValues = dao.SelectRandSubset(userID, 5000)[userID]
-	falseValues = bloomDataGenerator.GenData(1, 5000, 5001)[0]
+	trueValues = dao.SelectRandSubset(userID, 1000)[userID]
+	falseValues = bloomDataGenerator.GenData(1, 1000, 1001)[0]
+
+	// Close the DB connection
+	dao.CloseConnection()
 
 	// Assign dependent values to run graphite
 	addr, _ := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:2003", os.Getenv("GRAPHITE_IP")))
@@ -181,7 +201,7 @@ func main() {
 
 	// Send Request to bloom router
 	log.Printf("ATTACKING ROUTER @ %s\n", endpoint)
-	go sendRequest(500, endpoint, userID)
+	go sendRequest(expectedTrues, expectedFalses, int32(reqRate), endpoint, userID)
 
 	http.ListenAndServe(":9091", nil)
 }

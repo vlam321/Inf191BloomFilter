@@ -190,6 +190,5 @@ func main() {
 	log.Printf("SUCCESSFULLY MAPPED BLOOM SERVER IPS.")
 
 	http.HandleFunc("/filterUnsubscribed", handleRoute)
-	http.HandleFunc("/queryUnsubscribed", handleRoute)
 	http.ListenAndServe(":9090", nil)
 }

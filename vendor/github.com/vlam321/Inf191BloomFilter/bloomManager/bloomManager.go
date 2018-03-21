@@ -121,7 +121,11 @@ func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(dataSet map[int][]string) ma
 	filtered := bf.filter(dataSet)
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
-	result := db.Select(filtered)
+	result, err := db.Select(filtered)
+	if err != nil {
+		log.Printf("GetArrayOfUnsub Error: %v\n", err.Error())
+		return result
+	}
 	return result
 }
 
@@ -130,6 +134,10 @@ func (bf *BloomFilter) GetArrayOfUnsubscribedEmails(dataSet map[int][]string) ma
 func (bf *BloomFilter) QueryUnsubscribed(dataSet map[int][]string) map[int][]string {
 	db := databaseAccessObj.New()
 	defer db.CloseConnection()
-	result := db.Select(dataSet)
+	result, err := db.Select(dataSet)
+	if err != nil {
+		log.Printf("QueryUnsub Error: %v\n", err.Error())
+		return result
+	}
 	return result
 }

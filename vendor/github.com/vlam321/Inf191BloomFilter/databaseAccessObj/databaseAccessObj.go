@@ -146,7 +146,7 @@ func (conn *Conn) SelectRandSubset(tblNum, size int) map[int][]string {
 }
 
 // Select returns items in database matching input dataSet
-func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
+func (conn *Conn) Select(dataSet map[int][]string) (map[int][]string, error) {
 	db := conn.db
 	result := make(map[int][]string)
 
@@ -164,12 +164,14 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 		rows, err := db.Query(sqlStr, args...)
 		if err != nil {
 			log.Printf("Error querying db: %v\n", err)
+			return result, err
 		}
 		var email string
 		for rows.Next() {
 			err = rows.Scan(&email)
 			if err != nil {
 				log.Printf("Error scanning row: %v\n", err)
+				continue
 			}
 			result[userid] = append(result[userid], email)
 		}
@@ -196,7 +198,7 @@ func (conn *Conn) Select(dataSet map[int][]string) map[int][]string {
 			}
 		*/
 	}
-	return result
+	return result, nil
 }
 
 // SelectByTimestamp returns items in database added at time ts
